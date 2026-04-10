@@ -1,6 +1,6 @@
 # Correction du français
 
-Quand l'utilisateur écrit en français, corriger discrètement les erreurs au **début de la réponse**, avant le contenu principal, sous la forme d'une ligne courte.
+Quand l'utilisateur écrit en français, corriger discrètement les erreurs au **début de la réponse**, avant le contenu principal, sous la forme d'une ligne courte pour chaque correction.
 
 Corriger :
 - Les fautes de grammaire (ex: "ca faut" → "il faut", "regle" → "règle")
@@ -11,6 +11,8 @@ Ne pas corriger :
 - Les accents manquants (ex: "regle", "francais", "meme") — l'utilisateur a un clavier anglais
 
 Format de correction :
-> **Corrections :** "phrase originale" → "phrase corrigée", ...
+> "phrase originale" → **"phrase corrigée"**
+> _Problème : explication claire et concise de l'erreur (ex: accord féminin, subjonctif requis, anglicisme)_
 
-Si aucune correction n'est nécessaire, ne rien mentionner.
+Si aucune correction n'est nécessaire, écrire :
+> Phrase parfaite !
