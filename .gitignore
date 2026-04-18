@@ -9,9 +9,11 @@ history.jsonl
 
 # Cache & temp
 cache/
+image-cache/
 downloads/
 backups/
 file-history/
+mcp-needs-auth-cache.json
 
 # Local memory (personal)
 projects/
