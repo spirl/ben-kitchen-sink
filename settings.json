@@ -1,7 +1,4 @@
 {
-  "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Bash(cat*)",
@@ -66,6 +63,9 @@
       "WebFetch(domain:anthropic.com)",
       "WebFetch(domain:docs.anthropic.com)"
     ],
+    "deny": [
+      "Bash(python*)"
+    ],
     "ask": [
       "Bash(brew install*)",
       "Bash(docker compose*)",
@@ -81,9 +81,15 @@
       "Bash(go get*)",
       "Bash(go install*)",
       "Bash(sudo*)"
-    ],
-    "deny": [
-      "Bash(python*)"
     ]
-  }
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true
+  },
+  "language": "French",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "voiceEnabled": true
 }
