@@ -52,8 +52,8 @@ https://github.com/owner/repo/pull/NNN
 
 ### Phase 3 — Worktree and commit
 
-5. **Create worktree**: `git worktree add /tmp/<branch-name> -b <branch-name>`
-6. **Copy files** — for each in `code_files`, `test_files`, `doc_files`: read from `repo_root`, write to `/tmp/<branch-name>/`. No artifact files.
+5. **Create worktree** — follow `@rules/worktree.md`; let `<worktree_path>` = the resulting path.
+6. **Copy files** — for each in `code_files`, `test_files`, `doc_files`: read from `repo_root`, write to `<worktree_path>/`. No artifact files.
 7. **Commit**:
    ```
    feat: <one-line summary>
@@ -62,9 +62,9 @@ https://github.com/owner/repo/pull/NNN
    Requirements: <REQ-IDs>
    Tests: <N> test cases, all passing locally.
    ```
-8. **Push** (no `--force`): `git -C /tmp/<branch-name> push -u origin <branch-name>`
+8. **Push** (no `--force`): `git -C <worktree_path> push -u origin <branch-name>`
 9. **Open PR**: `gh pr create --draft --title "<title>" --body "<body from step 4>"`
-10. **Clean up**: `git worktree remove /tmp/<branch-name>`, then delete `artifact_dir`
+10. **Clean up** — follow `@rules/worktree.md` cleanup; then delete `artifact_dir`
 
 ### Phase 4 — CI loop
 
@@ -75,7 +75,7 @@ https://github.com/owner/repo/pull/NNN
 15. **If fail** (max 3 rounds):
     a. Read logs: `gh run view <run-id> --log-failed`
     b. Classify: test failure / build failure / test setup / infra → fix source or test
-    c. `git checkout <branch-name>`, fix with Edit, then `git add <files> && git commit -m "fix: <desc>" && git push origin <branch-name>`
+    c. Fix with Edit inside `<worktree_path>`, then `git -C <worktree_path> add <files> && git -C <worktree_path> commit -m "fix: <desc>" && git -C <worktree_path> push origin <branch-name>`
     d. Return to step 13
 16. **After 3 failed rounds** — emit FAIL with last error log.
 

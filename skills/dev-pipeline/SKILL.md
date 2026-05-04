@@ -78,7 +78,7 @@ Before calling each agent, write a JSON handoff file to `<pipeline_dir>/`. Agent
    - Write description to `<pipeline_dir>/spec.md`; `spec_file` = `<pipeline_dir>/spec.md`; `spec_content` = null
    - Default branch: `feat/pipeline-<timestamp>` (e.g. `feat/pipeline-20260417`)
 
-3. **Create git worktree** following worktree-workflow rule (check existing worktrees first, reuse if found). Derive `<worktree_path>` from where worktree is placed.
+3. **Create git worktree** following `@rules/worktree.md` (check existing worktrees first, reuse if found). Derive `<worktree_path>` from where worktree is placed.
    - Use `<worktree_path>` as `repo_root` in every downstream handoff.
 
 4. **Set `pipeline_dir`** = `<worktree_path>/.pipeline`. Create directory now.
