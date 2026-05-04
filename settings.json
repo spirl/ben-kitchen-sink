@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "additionalDirectories": [
+      "~/repos"
+    ],
     "allow": [
       "Bash(cat*)",
       "Bash(docker build*)",
