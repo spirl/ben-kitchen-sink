@@ -83,6 +83,7 @@
       "Bash(sudo*)"
     ]
   },
+  "enableAllProjectMcpServers": false,
   "enabledPlugins": {
     "gopls-lsp@claude-plugins-official": true
   },
