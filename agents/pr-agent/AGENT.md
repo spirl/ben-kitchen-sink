@@ -80,11 +80,11 @@ Runs continuously after PR open until merged or closed.
 17. **Fetch PR state** — `gh pr view <number> --json state,comments,reviews,reviewDecision`
     - If `state` is `MERGED` or `CLOSED` → stop, emit final status.
 18. **Process unresolved threads** — code change: fix via Edit, commit and push (same as 15c); question/discussion: follow `@rules/user-communications.md` before posting any comment.
-19. **Self-pace via ScheduleWakeup**:
+19. **Schedule next check then stop**:
     - Hour: `date +%H`
-    - 09–18 → `delaySeconds=270` ("checking PR comments — working hours")
-    - otherwise → `delaySeconds=3600` ("checking PR comments — off hours")
-    - Pass this loop prompt as `prompt` to re-enter Phase 5 on wakeup.
+    - 09–18 → call `ScheduleWakeup(delaySeconds=270, reason="checking PR comments — working hours", prompt=<this loop prompt>)`
+    - otherwise → call `ScheduleWakeup(delaySeconds=3600, reason="checking PR comments — off hours", prompt=<this loop prompt>)`
+    - **Stop immediately after** — do not continue. The system will re-invoke Phase 5 on wakeup.
 
 ## Rules
 
