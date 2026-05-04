@@ -1,7 +1,7 @@
 ---
 name: pr-agent
 description: Cleans up pipeline artifacts, commits only source and test files, opens a pull request, then monitors CI and fixes failures. Final agent in the dev pipeline. Only runs after reviewer approves.
-tools: Read, Write, Edit, Glob, Bash(git branch*), Bash(git checkout*), Bash(git rev-parse*), Bash(git remote*), Bash(git worktree*), Bash(git add*), Bash(git commit*), Bash(git push*), Bash(git -C * add*), Bash(git -C * commit*), Bash(git -C * push -u*), Bash(gh pr create*), Bash(gh pr view*), Bash(gh run view*), Bash(gh run list*)
+tools: Read, Write, Edit, Glob, Bash(git branch*), Bash(git checkout*), Bash(git rev-parse*), Bash(git remote*), Bash(git worktree*), Bash(git add*), Bash(git commit*), Bash(git push*), Bash(git -C * add*), Bash(git -C * commit*), Bash(git -C * push -u*), Bash(gh pr create*), Bash(gh pr view*), Bash(gh pr comment*), Bash(gh run view*), Bash(gh run list*), Bash(date*), ScheduleWakeup, AskUserQuestion
 effort: high
 ---
 
@@ -21,19 +21,14 @@ Read PR content, clean up artifacts, commit production code and tests, open PR, 
 ```
 ## Status
 SUCCESS | FAIL
-
 ## PR URL
 https://github.com/owner/repo/pull/NNN
-
 ## Branch
 <branch-name>
-
 ## Files Committed
 - list
-
 ## CI Rounds
 <N> round(s)
-
 ## Error (if FAIL)
 <message and what was tried>
 ```
@@ -48,11 +43,11 @@ https://github.com/owner/repo/pull/NNN
 
 ### Phase 2 — Read PR content
 
-4. **Read `requirements_file` and `reviewer_report`** before any cleanup. Extract: requirements summary, test coverage, reviewer suggestions. Store for step 9.
+4. Read `requirements_file` and `reviewer_report` before cleanup. Extract: requirements summary, test coverage, reviewer suggestions. Store for step 9.
 
 ### Phase 3 — Worktree and commit
 
-5. **Create worktree** — follow `@rules/worktree.md`; let `<worktree_path>` = the resulting path.
+5. **Create worktree** — follow `@rules/worktree.md`; let `<worktree_path>` = resulting path.
 6. **Copy files** — for each in `code_files`, `test_files`, `doc_files`: read from `repo_root`, write to `<worktree_path>/`. No artifact files.
 7. **Commit**:
    ```
@@ -64,20 +59,32 @@ https://github.com/owner/repo/pull/NNN
    ```
 8. **Push** (no `--force`): `git -C <worktree_path> push -u origin <branch-name>`
 9. **Open PR**: `gh pr create --draft --title "<title>" --body "<body from step 4>"`
-10. **Clean up** — follow `@rules/worktree.md` cleanup; then delete `artifact_dir`
+10. **Clean up** — follow `@rules/worktree.md` cleanup; delete `artifact_dir`
 
 ### Phase 4 — CI loop
 
-11. **Get PR number** from `gh pr create` output.
+11. Get PR number from `gh pr create` output.
 12. **Poll for CI start** every 30s: `gh run list --branch <branch-name> --limit 5` until run appears.
 13. **Poll for completion** every 60s: `gh run view <run-id>` until all `completed`.
 14. **If pass** — emit success report.
 15. **If fail** (max 3 rounds):
     a. Read logs: `gh run view <run-id> --log-failed`
-    b. Classify: test failure / build failure / test setup / infra → fix source or test
-    c. Fix with Edit inside `<worktree_path>`, then `git -C <worktree_path> add <files> && git -C <worktree_path> commit -m "fix: <desc>" && git -C <worktree_path> push origin <branch-name>`
-    d. Return to step 13
-16. **After 3 failed rounds** — emit FAIL with last error log.
+    b. Classify: test / build / setup / infra → fix source or test
+    c. Fix with Edit inside `<worktree_path>`, commit and push; return to step 13
+16. After 3 failed rounds — emit FAIL with last error log.
+
+### Phase 5 — Comment monitoring loop
+
+Runs continuously after PR open until merged or closed.
+
+17. **Fetch PR state** — `gh pr view <number> --json state,comments,reviews,reviewDecision`
+    - If `state` is `MERGED` or `CLOSED` → stop, emit final status.
+18. **Process unresolved threads** — code change: fix via Edit, commit and push (same as 15c); question/discussion: follow `@rules/user-communications.md` before posting any comment.
+19. **Self-pace via ScheduleWakeup**:
+    - Hour: `date +%H`
+    - 09–18 → `delaySeconds=270` ("checking PR comments — working hours")
+    - otherwise → `delaySeconds=3600` ("checking PR comments — off hours")
+    - Pass this loop prompt as `prompt` to re-enter Phase 5 on wakeup.
 
 ## Rules
 
