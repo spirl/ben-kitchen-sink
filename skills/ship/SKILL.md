@@ -1,12 +1,12 @@
 ---
-name: develop
-description: Smart development orchestrator. Assesses current repo state, runs only the pipeline stages actually needed (planner → coder+test-writer → validator → reviewer → doc-patcher → pr-agent → CI), and loops until CI is green or user input is required. Picks up from where it left off on subsequent invocations. Use when the user asks to "develop", "implement", "build", "fix CI", "run the pipeline", "implement this ticket", or wants to ship code.
+name: ship
+description: Smart development orchestrator. Assesses current repo state, runs only the pipeline stages actually needed (planner → coder+test-writer → validator → reviewer → doc-patcher → pr-agent → CI), and loops until CI is green or user input is required. Picks up from where it left off on subsequent invocations. Use when the user asks to "ship", "develop", "implement", "build", "fix CI", "run the pipeline", "implement this ticket", or wants to ship code.
 allowed-tools: Read Write Glob Bash Agent
 argument-hint: [url-or-file-or-description] [branch-name]
 effort: max
 ---
 
-# Develop
+# Ship
 
 Assess state → pick stages → run → loop until done.
 
@@ -77,7 +77,7 @@ Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is
 
 ## Loop
 
-After each stage: re-assess → next stage → repeat until CI green, blocked, or no stages remain.
+After each completed stage: re-assess → next stage → repeat until CI green, blocked, or no stages remain.
 
 ## Stage 1 — Plan
 
