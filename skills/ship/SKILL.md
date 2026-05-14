@@ -183,4 +183,4 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 - Create PRs as `--draft`
 - One-line progress after each stage
 - Re-read `state.json` at top of every loop iteration
-- Self-improver is opt-in: set `enable_self_improve: true` in state or as an argument
+- Self-improver runs by default (supervisor-managed); disable with `enable_self_improve: false`

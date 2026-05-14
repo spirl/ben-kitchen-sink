@@ -58,7 +58,7 @@ If intervention was appropriate:
    | User re-prompted because agent missed something in its instructions | Yes | Add the missing instruction to the agent's AGENT.md or SKILL.md |
    | User had to unblock a stalled pipeline for a non-destructive reason | Yes | Make that case auto-recoverable in the skill |
    | Force-push, deletion, branch ops, PR merge | **No** | Destructive — confirmation is correct |
-   | Secrets, credentials, API keys | **No** | User must always provide |
+   | Secrets, credentials, API keys | **No** | Never request or accept — plain-text keys must never enter the chat |
    | Genuinely ambiguous spec requiring a decision | **No** | Escalation was right |
 
 3. **If reducible**:
