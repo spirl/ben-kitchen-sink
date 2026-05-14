@@ -24,3 +24,6 @@ plugins/
 *.local.*
 paste-cache/
 .idea/
+.claude/
+.last-cleanup
+.tickets/

@@ -1,9 +1,5 @@
 {
   "permissions": {
-    "additionalDirectories": [
-      "~/repos",
-      "~/worktrees"
-    ],
     "allow": [
       "Bash(cat*)",
       "Bash(docker build*)",
@@ -65,7 +61,8 @@
       "Bash(make*)",
       "Bash(tail*)",
       "WebFetch(domain:anthropic.com)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(gpg *)"
     ],
     "deny": [
       "Bash(python*)"
@@ -85,17 +82,29 @@
       "Bash(go get*)",
       "Bash(go install*)",
       "Bash(sudo*)"
+    ],
+    "additionalDirectories": [
+      "~/repos",
+      "~/worktrees",
+      "~/.gnupg"
     ]
-  },
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true
   },
   "enableAllProjectMcpServers": false,
   "enabledPlugins": {
     "gopls-lsp@claude-plugins-official": true
   },
   "language": "French",
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnixSockets": ["~/.gnupg/S.gpg-agent"],
+    "denyRead": [
+      "~/.ssh/**"
+    ],
+    "network": {
+      "allowedDomains": ["github.com"]
+    }
+  },
   "voice": {
     "enabled": true,
     "mode": "hold"
