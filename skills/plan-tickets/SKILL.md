@@ -64,8 +64,8 @@ If fetching fails and no fallback is possible, stop and tell the user what's nee
 
 ### 2. Gather Context
 
-- Ask the user: **"Are there existing tickets this relates to?"** — if yes, fetch those too (same method as step 1).
-- If a repo is detectable (`git rev-parse --show-toplevel`), note the `repo_root` for the analyst.
+- **Detect repo root** — run `git rev-parse --show-toplevel`; if inside a git repo, store as `repo_root` and pass to the analyst. If not in a repo, set `repo_root = null`.
+- **Ask for related tickets** — skip if `source_type = stdin` AND input is fewer than 50 words (clearly self-contained). Otherwise ask: **"Are there existing tickets this relates to?"** — if yes, fetch those too (same method as step 1).
 
 ---
 
@@ -113,7 +113,9 @@ gh issue edit <number> --repo <org/repo> --title "<title>" --body "<description 
 
 **Jira** — use Jira MCP if available to create or update the issue.
 
-**Fallback (no integration available)** — write each ticket to `.tickets/<slug>.md` and tell the user where the files are.
+**Fallback (no integration available)** — write each ticket to `.tickets/<slug>.md`. Tell the user:
+- Which integrations were attempted (Linear, Jira, GitHub) and why each was unavailable
+- The exact paths of the files created (e.g. `.tickets/ticket-add-dark-mode.md`)
 
 ---
 
@@ -130,3 +132,5 @@ Clean up `.tickets/handoff_analyst.json` (keep `.tickets/proposals.md` as a loca
 - Prefer updating an existing ticket over creating a duplicate
 - If MCP integration is unavailable, fall back to local `.tickets/` files — never silently skip
 - Do not push code or open PRs — this skill is planning only
+- Always detect `repo_root` via `git rev-parse --show-toplevel` and pass it to the analyst
+- Skip the "related tickets" question when `source_type = stdin` and input is fewer than 50 words
