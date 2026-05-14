@@ -86,6 +86,10 @@
       "Bash(sudo*)"
     ]
   },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
   "enableAllProjectMcpServers": false,
   "enabledPlugins": {
     "gopls-lsp@claude-plugins-official": true
