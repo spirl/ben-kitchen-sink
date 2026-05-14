@@ -16,6 +16,8 @@ Independent code review of implementation and tests. Produce clear verdict: appr
 - `code_conventions` _(optional)_ — pre-loaded `how-to-code` content; skip file discovery when present
 - `test_conventions` _(optional)_ — pre-loaded `how-to-test` content; skip file discovery when present
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```

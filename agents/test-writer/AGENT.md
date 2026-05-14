@@ -17,6 +17,8 @@ Write the actual test code from the requirements and architecture. Follow the re
 - `repo_root` — absolute path to the repository root
 - `test_conventions` _(optional)_ — pre-loaded content of `how-to-test` skill; when present, skip file discovery
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 A structured response containing:

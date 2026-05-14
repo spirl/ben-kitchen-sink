@@ -19,6 +19,8 @@ Write implementation from architecture and requirements. Follow repo conventions
 - `review_issues` _(optional)_ — blocking reviewer issues; fix each before re-implementing
 - `code_conventions` _(optional)_ — pre-loaded content of `how-to-code` skill; when present, skip file discovery
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```
