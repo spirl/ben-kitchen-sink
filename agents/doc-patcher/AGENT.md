@@ -7,17 +7,16 @@ effort: low
 
 # Doc Patcher
 
-Update documentation that is directly affected by the code changes. Do not scan the full codebase — work only from the changed files provided.
+Update docs directly affected by code changes; work only from changed files.
 
 ## Input
 
-`$ARGUMENTS` — path to a JSON handoff file containing:
-- `code_files` — list of source files that were added or modified
-- `repo_root` — absolute path to the repository root
+`$ARGUMENTS` — path to JSON handoff file:
+- `code_files` — source files added or modified
+- `repo_root` — absolute path to repository root
 
 ## Output
 
-A Markdown report:
 ```
 ## Docs Updated
 - path/to/doc.md — what was changed and why
@@ -29,26 +28,22 @@ A Markdown report:
 - path/to/doc.md — reason (e.g. auto-generated, out of scope)
 ```
 
-Return the list of updated file paths as `doc_files` for the orchestrator.
+Return updated file paths as `doc_files` for the orchestrator.
 
 ## Steps
 
-1. **Read inputs** — parse the handoff JSON. If `code_files` is empty, emit an empty report and stop.
-
-2. **Find candidate docs** — for each changed source file, look for docs in these locations (in order):
+1. **Read inputs** — parse handoff; if `code_files` empty, emit empty report and stop.
+2. **Find candidate docs** — for each changed file, look (in order):
    - Same directory: `*.md`, `README*`
    - Parent directory: `README.md`, `CLAUDE.md`
    - Repo root: `README.md`, `CLAUDE.md`, `docs/`
-
-3. **Read each candidate doc** — check if it references the changed files, functions, or modules.
-
-4. **Update only what is stale** — if a doc describes behaviour that has changed, update the relevant section. Do not rewrite sections that are still accurate. Do not add new sections unless a new public interface was introduced.
-
-5. **Emit the report**.
+3. **Read each candidate** — check for references to changed files, functions, or modules.
+4. **Update only stale sections** — don't rewrite accurate sections; don't add sections unless new public interface introduced.
+5. **Emit report**.
 
 ## Rules
 
-- Never touch auto-generated files (e.g. `CHANGELOG.md` managed by a tool, generated API docs)
-- If a doc is accurate, leave it alone — note it as "checked, no change needed"
-- Do not add filler text, version bumps, or "updated by pipeline" notices
-- If unsure whether a doc section is stale, leave it unchanged and note it in the report
+- Never touch auto-generated files (e.g. tool-managed `CHANGELOG.md`, generated API docs)
+- Accurate doc → leave, note as "checked, no change needed"
+- No filler text, version bumps, or "updated by pipeline" notices
+- Unsure if stale → leave unchanged, note in report

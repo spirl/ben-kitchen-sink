@@ -1,6 +1,6 @@
 # Handoff Schema
 
-Canonical field names for all inter-agent JSON handoff files used in the ship pipeline. All agents' Input sections reference these names. The ship skill constructs handoffs using these exact keys.
+Canonical field names for inter-agent JSON handoffs in the ship pipeline. Agents' Input sections reference these names; ship skill constructs handoffs with these keys.
 
 ## Common Fields
 
@@ -45,7 +45,7 @@ Canonical field names for all inter-agent JSON handoff files used in the ship pi
 
 ## Convention Fields (optional)
 
-Pre-loaded by the ship skill at startup and injected into agent handoffs. When present, agents skip their own file-discovery step.
+Pre-loaded by ship at startup, injected into handoffs; agents skip file-discovery when present.
 
 | Field | Type | Description |
 |---|---|---|

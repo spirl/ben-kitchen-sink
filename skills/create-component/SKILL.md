@@ -7,7 +7,7 @@ argument-hint: [agent|skill] [name]
 
 # Create Component
 
-Create a new Claude Code skill or agent following conventions.
+Create a new Claude Code skill or agent.
 
 ## Skill vs Agent
 
@@ -21,11 +21,11 @@ Create a new Claude Code skill or agent following conventions.
 
 ## Steps
 
-1. **Detect type** — use `$ARGUMENTS[0]` if it is `agent` or `skill`; else ask: "Are you creating a skill (user-invocable workflow) or an agent (pipeline component)?"
+1. **Detect type** — use `$ARGUMENTS[0]` if `agent` or `skill`; else ask: "Skill (user-invocable) or agent (pipeline component)?"
 2. **Name and purpose** — use `$ARGUMENTS[1]` if provided; else ask: what is the single responsibility?
 3. **Clarify if needed**:
-   - *Skill*: What phrases trigger it? Tools needed? Effort level? Isolation needed?
-   - *Agent*: What are its inputs/outputs? Tools needed? Which pipeline calls it?
+   - *Skill*: trigger phrases? tools needed? effort? isolation?
+   - *Agent*: inputs/outputs? tools? which pipeline calls it?
 4. **Placement** — project-local (`.claude/`) if project-specific; else global (`~/.claude/`)
 5. **Create files** — use [agent-template.md](agent-template.md) or [skill-template.md](skill-template.md); see [reference.md](reference.md); keep under 400 lines
 6. **Confirm** — show file(s) and location; ask if adjustments needed

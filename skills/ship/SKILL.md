@@ -26,9 +26,9 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 | 2 | Code + Tests | coder + test-writer | code written for current plan; test-writer skipped for IaC/config-only/docs |
 | 3 | Validate | validator | last result = PASS, no changes since |
 | 4 | Review | reviewer | last verdict = APPROVE |
-| 4.1 | Requirements check (opt.) | requirements-checker | disabled by default; enable with `enable_req_check: true` in state, or when spec URL is a Linear ticket |
+| 4.1 | Requirements check (opt.) | requirements-checker | disabled by default; enable with `enable_req_check: true` or when spec URL is Linear |
 | 5 | Patch docs | doc-patcher | no code changed since last doc run |
-| 5.1 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` in state |
+| 5.1 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` |
 | 6 | Open PR | pr-agent | PR already open on branch |
 | 7 | Monitor CI | — | CI green, or no PR yet |
 
@@ -67,7 +67,7 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 
 Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is | inline → `.pipeline/spec.md`
 
-If the URL is a Linear ticket URL (`linear.app/*/issue/<ID>/...` or bare `ABC-123`), extract the ticket ID and save `{ "linear_ticket_id": "<ID>", "enable_req_check": true }` in state.
+If URL is Linear (`linear.app/*/issue/<ID>/...` or bare `ABC-123`), extract ticket ID and save `{ "linear_ticket_id": "<ID>", "enable_req_check": true }` in state.
 
 **B. Detect real state** (always; trumps stale saved state):
 
@@ -83,15 +83,15 @@ If the URL is a Linear ticket URL (`linear.app/*/issue/<ID>/...` or bare `ABC-12
 | State = `done` | Monitor PR for comments until merged, then wrap up |
 | Nothing | **plan** (needs spec arg) |
 
-**Idempotency rules:**
-- If `state.json` shows a stage as `done` and its output artifacts still exist → skip that stage, do not re-run
-- If stage is `pr` and a PR already exists on `branch_name` → skip pr-agent, go directly to CI monitoring
-- If stage is `done` → monitor the PR for new comments until it is merged, then do wrap up (delete worktree, record achievement)
+**Idempotency:**
+- State stage `done` and artifacts exist → skip, don't re-run
+- Stage `pr` and PR exists on `branch_name` → skip pr-agent, go to CI monitoring
+- Stage `done` → monitor PR comments until merged, then wrap up (delete worktree, record achievement)
 
 **C. Pre-load conventions** (run once; stored in state):
-- Read `.claude/skills/how-to-code/SKILL.md` if it exists → store content as `code_conventions`
-- Read `.claude/skills/how-to-test/SKILL.md` if it exists → store content as `test_conventions`
-- If absent, the field stays `null`; agents fall back to their own discovery
+- Read `.claude/skills/how-to-code/SKILL.md` → store as `code_conventions`
+- Read `.claude/skills/how-to-test/SKILL.md` → store as `test_conventions`
+- If absent, field stays `null`; agents fall back to own discovery
 
 **D. Worktree** — follow `@rules/worktree.md`. Derive `<worktree_path>` as `repo_root`. Create `.pipeline/`.
 
@@ -99,12 +99,12 @@ If the URL is a Linear ticket URL (`linear.app/*/issue/<ID>/...` or bare `ABC-12
 
 ## Loop
 
-After each completed stage, call the supervisor before advancing:
+After each completed stage, call supervisor before advancing:
 ```json
 { "pipeline_state": ".pipeline/state.json", "last_stage_output": "<last_report_path>" }
 ```
 - `continue` → proceed to next stage
-- `intervene(agent, instructions)` → call the specified agent with the given instructions, then re-run the current stage
+- `intervene(agent, instructions)` → call specified agent with instructions, re-run current stage
 - `escalate` → stop pipeline, show supervisor's Diagnosis to user
 
 After each stage: re-assess → next stage → repeat until CI green, blocked, or no stages remain.
@@ -119,7 +119,7 @@ Save: `{ "stage": "code" }`
 
 ## Stage 2 — Code + Tests
 
-Assess testability from plan. Skip `test-writer` if work is primarily IaC (Terraform/Pulumi/Helm/K8s/Ansible), config-only, or docs with no unit-testable logic.
+Assess testability from plan. Skip `test-writer` if primarily IaC (Terraform/Pulumi/Helm/K8s/Ansible), config-only, or docs with no unit-testable logic.
 
 Testable: call `coder` + `test-writer` simultaneously.
 Not testable: call `coder` only, set `test_files = []`.
@@ -163,9 +163,9 @@ Call `reviewer` → `.pipeline/reviewer_report.md`.
 
 ## Stage 4.1 — Requirements Check (optional)
 
-Runs only when `enable_req_check: true` in state OR when `spec_file` was fetched from a Linear URL.
+Runs only when `enable_req_check: true` or `spec_file` fetched from Linear URL.
 
-Fetch the Linear ticket via MCP (`mcp__claude_ai_Linear__get_issue`) and write content to `.pipeline/ticket.md`.
+Fetch Linear ticket via MCP (`mcp__claude_ai_Linear__get_issue`) → `.pipeline/ticket.md`.
 
 ```json
 {
@@ -189,9 +189,9 @@ Call `doc-patcher`. Save: `{ "stage": "pr", "doc_files": [...] }`
 
 ## Stage 5.1 — Fact-check (optional)
 
-Runs only when `enable_fact_check: true` in state. Validates that updated docs are consistent with the code.
+Runs only when `enable_fact_check: true`. Validates updated docs are consistent with code.
 
-Call `fact-checker` with `doc_files` and `code_files`. Save: `{ "stage": "pr" }` (no state change if disabled).
+Call `fact-checker` with `doc_files` and `code_files`. Save: `{ "stage": "pr" }`.
 
 ## Stage 6 — PR Agent
 
@@ -229,13 +229,13 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 | Validator `MAX_VALIDATOR_ROUNDS`× fail | Stop, show report |
 | Reviewer `MAX_REVIEWER_RETRIES+1`× changes | Stop, show review |
 | CI fix `MAX_CI_FIX_ROUNDS`× fail | Stop, show CI log |
-| Agent returns empty output | Stop; show user: "Agent <name> returned no output at stage <X>. Check agent definition." |
-| Agent returns malformed output | Stop; show user: "Agent <name> returned unexpected format at stage <X>." |
+| Agent returns empty output | Stop: "Agent <name> returned no output at stage <X>. Check agent definition." |
+| Agent returns malformed output | Stop: "Agent <name> returned unexpected format at stage <X>." |
 | Agent ERROR | Stop, show error |
 
 ## Self-Improver
 
-After every user intervention (permission grant, answer, re-prompt, unblock), invoke `self-improver` with a description of what happened. Runs by default; disable with `enable_self_improve: false` in state.
+After every user intervention (permission grant, answer, re-prompt, unblock), invoke `self-improver` with description of what happened. Runs by default; disable with `enable_self_improve: false` in state.
 
 ## Rules
 
@@ -244,5 +244,5 @@ After every user intervention (permission grant, answer, re-prompt, unblock), in
 - Create PRs as `--draft`
 - One-line progress after each stage
 - Re-read `state.json` at top of every loop iteration
-- Requirements-checker stage (4.1) is opt-in: auto-enabled when spec is a Linear URL; or set `enable_req_check: true` in state
-- Fact-checker stage (5.1) is opt-in: set `enable_fact_check: true` in state or as an argument to enable
+- Stage 4.1 opt-in: auto-enabled for Linear URL spec; or set `enable_req_check: true`
+- Stage 5.1 opt-in: set `enable_fact_check: true`

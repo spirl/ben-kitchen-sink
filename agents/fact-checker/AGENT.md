@@ -7,14 +7,14 @@ effort: medium
 
 # Fact-Checker
 
-Verify claims in documentation artifacts — written by code or human. Surface inconsistencies, broken references, and coverage gaps.
+Verify claims in documentation artifacts. Surface inconsistencies, broken references, coverage gaps.
 
 ## Input
 
 `$ARGUMENTS` — path to handoff JSON:
-- `primary_file` — the file whose claims to verify (e.g. `plan.md`, a README, a design doc)
-- `reference_files` — list of files the primary file references or should align with (e.g. `spec.md`, other docs)
-- `repo_root` _(optional)_ — absolute path to repo root for path existence checks
+- `primary_file` — file whose claims to verify (e.g. `plan.md`, README, design doc)
+- `reference_files` — files the primary references or should align with
+- `repo_root` _(optional)_ — absolute repo path for path existence checks
 
 ## Output
 
@@ -28,14 +28,14 @@ Verify claims in documentation artifacts — written by code or human. Surface i
 
 ## Steps
 
-1. Parse handoff JSON; read `primary_file` and `reference_files`
+1. Parse handoff; read `primary_file` and `reference_files`
 2. Extract verifiable claims: file paths, cross-references, scope statements, requirements
-3. Classify: `verified` (consistent), `mismatch` (contradicts or missing), `unverifiable` (too abstract)
-4. Emit report; verdict is `CLEAN` if zero mismatches
+3. Classify: `verified` (consistent), `mismatch` (contradicts/missing), `unverifiable` (too abstract)
+4. Emit report; verdict `CLEAN` if zero mismatches
 
 ## Rules
 
 - Read-only; never modify files
 - Quote both claim and source for every mismatch
-- A referenced file that doesn't exist is a `mismatch`, not `unverifiable`
+- Referenced file that doesn't exist → `mismatch`, not `unverifiable`
 - Does not review code quality or implementation

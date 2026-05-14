@@ -6,7 +6,7 @@ effort: low
 argument-hint: brief description of what was accomplished (optional)
 ---
 
-# Log Achievement Skill
+# Log Achievement
 
 Capture professional win to persistent achievements log.
 

@@ -17,17 +17,16 @@ echo "Repo: $(git rev-parse --show-toplevel 2>/dev/null || echo '(not a git repo
 
 ## Step 1 — Parse Ticket ID
 
-Extract the Linear ticket ID from `$ARGUMENTS`:
-
+Extract Linear ticket ID from `$ARGUMENTS`:
 - Full URL: `https://linear.app/<team>/issue/ABC-123/...` → `ABC-123`
 - Short ID: `ABC-123` → `ABC-123`
-- No argument: stop and ask user for the ticket ID
+- No argument: stop and ask user for ticket ID
 
-## Step 2 — Fetch Ticket from Linear
+## Step 2 — Fetch Ticket
 
 Call `mcp__claude_ai_Linear__get_issue` with the ticket ID.
 
-Write the ticket content to `/tmp/requirements-check-ticket.md`:
+Write to `/tmp/requirements-check-ticket.md`:
 
 ```markdown
 # <title>
@@ -39,17 +38,17 @@ Write the ticket content to `/tmp/requirements-check-ticket.md`:
 <description>
 ```
 
-If the ticket is not found or the MCP call fails, stop and tell the user.
+If not found or MCP fails, stop and tell user.
 
 ## Step 3 — Get Changed Files
 
-Run from the repo root:
+Run from repo root:
 
 ```bash
 git diff main...HEAD --name-only 2>/dev/null || git diff HEAD~1 --name-only
 ```
 
-If no changed files found, warn the user and continue (requirements-checker will still evaluate ticket completeness).
+If no changed files found, warn user and continue.
 
 ## Step 4 — Call Requirements Checker
 
@@ -69,11 +68,11 @@ Call agent `requirements-checker` with the handoff path.
 
 ## Step 5 — Show Results
 
-Display the full report from requirements-checker.
+Display full report from requirements-checker.
 
-If verdict is **FAIL**, offer next steps:
-- Fix the gaps in the implementation
-- Run `/ship` to re-run the full pipeline
+If **FAIL**, offer next steps:
+- Fix gaps in implementation
+- Run `/ship` to re-run full pipeline
 - Ignore specific requirements (user decides)
 
-If verdict is **PASS**, confirm all requirements are met.
+If **PASS**, confirm all requirements met.

@@ -13,7 +13,7 @@ Scan repository, update all existing docs to reflect current code. Write in **En
 
 1. **Inventory docs** — find and read: `README.md`, `CLAUDE.md`, `docs/*.md`
 2. **Explore codebase** — understand purpose, how to run, directory structure, key components, architecture, dependencies, recent changes
-3. **Update each doc** — compare against actual code; update only outdated/incorrect sections; correct inaccuracies
+3. **Update each doc** — compare against actual code; update only outdated/incorrect sections
 4. **Create missing docs**: `docs/CODEBASE.md`, `README.md`, `CLAUDE.md`
 
 ## Format for docs/CODEBASE.md

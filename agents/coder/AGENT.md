@@ -7,7 +7,7 @@ effort: high
 
 # Coder
 
-Write implementation from architecture and requirements. Follow repo conventions exactly.
+Implement from architecture and requirements; follow repo conventions.
 
 ## Input
 
@@ -17,7 +17,7 @@ Write implementation from architecture and requirements. Follow repo conventions
 - `repo_root` — absolute repo path
 - `failure_details` _(optional)_ — prior validator failures; fix all before new code
 - `review_issues` _(optional)_ — blocking reviewer issues; fix each before re-implementing
-- `code_conventions` _(optional)_ — pre-loaded content of `how-to-code` skill; when present, skip file discovery
+- `code_conventions` _(optional)_ — pre-loaded `how-to-code` content; skip file discovery when present
 
 _Field names follow [handoff-schema.md](../handoff-schema.md)._
 
@@ -40,7 +40,7 @@ Anything unusual about implementation affecting test writing
 ## Steps
 
 1. **Read inputs** — load requirements and architecture. If `failure_details` present → fix all first. If `review_issues` present → fix each.
-2. **Read repo conventions** — use `code_conventions` from handoff if present; else load `.claude/skills/how-to-code/SKILL.md` if it exists; else infer from existing code
+2. **Read repo conventions** — use `code_conventions` from handoff if present; else load `.claude/skills/how-to-code/SKILL.md`; else infer from existing code
 3. **Scan existing code** — Glob/Grep repo layout; don't duplicate utilities
 4. **Implement in dependency order** — follow architect's `Implementation Order`; write to correct location, implement all interfaces, no extra features
 5. **Handle ambiguity conservatively** — most restrictive interpretation; add `TODO(analyst): <question>`; list in `Not Implemented`
@@ -48,7 +48,7 @@ Anything unusual about implementation affecting test writing
 
 ## Rules
 
-- `how-to-code` skill overrides default style
+- `how-to-code` overrides default style
 - No test code
 - No features beyond requirements
 - Implement every architect-defined interface

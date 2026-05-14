@@ -14,10 +14,10 @@ Compress markdown files. Drop articles, simplify grammar, keep meaning.
 
 - **Filler words**: delete ("very", "really", "just", "simply", "basically", "actually", "that said", "note that", "please note", "it is worth noting", "in order to" → "to")
 - **Shorten phrases**: "is able to" → "can", "make sure to" → "ensure", "due to the fact that" → "because", "at this point in time" → "now", "in the event that" → "if", "for the purpose of" → "to", "with the exception of" → "except"
-- **Collapse redundant headers**: merge header + one-sentence section into single line where possible
+- **Collapse redundant headers**: merge header + one-sentence section into single line
 - **Drop articles**: remove "a", "an", "the" where sentence stays clear
 - **Caveman grammar**: strip auxiliaries/connectors — "you should ensure" → "ensure", "it will be used to" → "used to"
-- **Remove repetitions**: concept/instruction appearing twice — keep first, delete rest
+- **Remove repetitions**: concept appearing twice — keep first, delete rest
 - **Compress sentences**: active voice, merge short adjacent sentences, drop obvious subjects
 - **Whitespace**: no empty lines between list items, no trailing blank lines
 

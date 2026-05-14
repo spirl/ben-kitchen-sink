@@ -7,7 +7,7 @@ effort: high
 
 # PR Agent
 
-Read PR content, clean up artifacts, commit production code and tests, open PR, monitor CI until passing.
+Read PR content, clean up artifacts, commit code and tests, open PR, monitor CI until passing.
 
 ## Input
 
@@ -47,7 +47,7 @@ https://github.com/owner/repo/pull/NNN
 
 ### Phase 3 — Worktree and commit
 
-5. **Create worktree** — follow `@rules/worktree.md`; let `<worktree_path>` = resulting path.
+5. **Create worktree** — follow `@rules/worktree.md`; `<worktree_path>` = resulting path.
 6. **Copy files** — for each in `code_files`, `test_files`, `doc_files`: read from `repo_root`, write to `<worktree_path>/`. No artifact files.
 7. **Commit**:
    ```
@@ -79,12 +79,12 @@ Runs continuously after PR open until merged or closed.
 
 17. **Fetch PR state** — `gh pr view <number> --json state,comments,reviews,reviewDecision`
     - If `state` is `MERGED` or `CLOSED` → stop, emit final status.
-18. **Process unresolved threads** — code change: fix via Edit, commit and push (same as 15c); question/discussion: follow `@rules/user-communications.md` before posting any comment.
+18. **Process unresolved threads** — code change: fix via Edit, commit and push (same as 15c); question/discussion: follow `@rules/user-communications.md` before posting.
 19. **Schedule next check then stop**:
     - Hour: `date +%H`
-    - 09–18 → call `ScheduleWakeup(delaySeconds=270, reason="checking PR comments — working hours", prompt=<this loop prompt>)`
-    - otherwise → call `ScheduleWakeup(delaySeconds=3600, reason="checking PR comments — off hours", prompt=<this loop prompt>)`
-    - **Stop immediately after** — do not continue. The system will re-invoke Phase 5 on wakeup.
+    - 09–18 → `ScheduleWakeup(delaySeconds=270, reason="checking PR comments — working hours", prompt=<this loop prompt>)`
+    - otherwise → `ScheduleWakeup(delaySeconds=3600, reason="checking PR comments — off hours", prompt=<this loop prompt>)`
+    - **Stop immediately after** — system re-invokes Phase 5 on wakeup.
 
 ## Rules
 

@@ -15,7 +15,7 @@ git branch --show-current 2>/dev/null && git rev-parse --show-toplevel 2>/dev/nu
 1. **Verify git repo** — stop if not.
 2. **Branch name** — use `$ARGUMENTS` if provided; else ask.
 3. **Check conflicts** — `git branch --list <branch-name>`; if exists, ask before proceeding.
-4. **Create worktree** for branch (follow worktree workflow rules for path).
+4. **Create worktree** for branch (follow worktree workflow rules).
 5. **Apply changes** — read from repo root, write inside worktree.
 6. **Commit** inside worktree.
 7. **Push** (no `-f`) from worktree.

@@ -7,7 +7,7 @@ effort: light
 
 # Self-Improver
 
-One intervention just happened. Understand why. Propose exactly what to change so it doesn't happen again — or confirm that it was appropriate and should stay.
+One intervention just happened. Understand why. Propose exactly what to change so it doesn't happen again — or confirm it was appropriate.
 
 ## Input
 
@@ -23,7 +23,7 @@ Inline only — no files written:
 ```
 ## Intervention Analysis
 
-**What happened**: <one-sentence summary of the intervention>
+**What happened**: <one-sentence summary>
 **Friction type**: Reducible | Appropriate
 
 ### Proposal — <short title>
@@ -35,43 +35,43 @@ Inline only — no files written:
 - **Why this prevents the intervention**: <one sentence>
 ```
 
-If intervention was appropriate:
+If appropriate:
 ```
 ## Intervention Analysis
 
 **What happened**: <summary>
 **Friction type**: Appropriate — no change proposed.
-**Reason**: <why this intervention was correct — destructive op, secret, genuine ambiguity, etc.>
+**Reason**: <why this intervention was correct>
 ```
 
 ## Steps
 
-1. **Understand the intervention** — read `$ARGUMENTS` carefully. What was the user asked to do or decide?
+1. **Understand the intervention** — read `$ARGUMENTS`. What was the user asked to do or decide?
 2. **Classify**:
 
    | Intervention type | Reducible? | Proposed fix |
    |---|---|---|
-   | Permission grant for network access (web search, fetching docs, package registry) | Yes | Add host to sandbox allowed networks |
-   | Permission grant for file read/write at a routine path | Yes | Add path to sandbox allowlist |
-   | Agent asked a question the user answered immediately without deliberation | Yes | Add that knowledge as a default assumption in the agent's AGENT.md |
-   | Agent asked a question that required real user thought | Maybe | If it's a pattern, add an "ask upfront" checklist to the relevant skill |
-   | User re-prompted because agent missed something in its instructions | Yes | Add the missing instruction to the agent's AGENT.md or SKILL.md |
-   | User had to unblock a stalled pipeline for a non-destructive reason | Yes | Make that case auto-recoverable in the skill |
-   | Force-push, deletion, branch ops, PR merge | **No** | Destructive — confirmation is correct |
-   | Secrets, credentials, API keys | **No** | Never request or accept — plain-text keys must never enter the chat |
-   | Genuinely ambiguous spec requiring a decision | **No** | Escalation was right |
+   | Permission grant for network access | Yes | Add host to sandbox allowed networks |
+   | Permission grant for file read/write at routine path | Yes | Add path to sandbox allowlist |
+   | Agent asked question user answered without deliberation | Yes | Add as default assumption in agent's AGENT.md |
+   | Agent asked question requiring real user thought | Maybe | If pattern, add "ask upfront" checklist to skill |
+   | User re-prompted because agent missed something | Yes | Add missing instruction to AGENT.md or SKILL.md |
+   | User unblocked stalled pipeline for non-destructive reason | Yes | Make case auto-recoverable in skill |
+   | Force-push, deletion, branch ops, PR merge | **No** | Destructive — confirmation correct |
+   | Secrets, credentials, API keys | **No** | Never request or accept |
+   | Genuinely ambiguous spec requiring decision | **No** | Escalation was right |
 
 3. **If reducible**:
-   - Read the relevant file (agent, skill, or note "sandbox settings")
-   - Find the exact section to update
-   - Quote the current text (or note if it's a new addition)
-   - Write the concrete replacement — actual text, not "add more detail"
-4. **Emit inline** — one proposal per intervention (rarely two if the fix spans two files)
+   - Read the relevant file
+   - Find exact section to update
+   - Quote current text (or note if new addition)
+   - Write concrete replacement — actual text, not "add more detail"
+4. **Emit inline** — one proposal per intervention (rarely two if fix spans two files)
 
 ## Rules
 
 - Read-only: never write, edit, or delete any file
 - One intervention = one analysis = at most two proposals
 - Quote current text exactly; never paraphrase
-- Do not propose removing appropriate interventions
-- If the right fix is unclear, say so explicitly rather than proposing a vague change
+- Don't propose removing appropriate interventions
+- If right fix is unclear, say so rather than proposing vague change

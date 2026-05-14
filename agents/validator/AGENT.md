@@ -50,7 +50,7 @@ DONE (all pass) | RETRY (failures routed above)
 1. **Read inputs** — load handoff and validator notes
 2. **Detect test runner** — read `.claude/skills/how-to-test/SKILL.md` or infer from repo (`pytest.ini`, `package.json`, `go.mod`)
 3. **Run tests** — capture stdout, stderr, exit code
-4. **Parse output** — per-test: name, pass/fail/error, message, file, line
+4. **Parse output** — per test: name, pass/fail/error, message, file, line
 5. **Diagnose failures**:
    - Source bug → `coder` (assertion fails, runtime exception from code under test)
    - Test bug → `test-writer` (wrong mock/fixture, wrong assertion, flaky)

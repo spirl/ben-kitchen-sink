@@ -102,7 +102,7 @@
       "~/.ssh/**"
     ],
     "network": {
-      "allowedDomains": ["github.com"]
+      "allowedDomains": ["github.com", "api.github.com"]
     }
   },
   "voice": {

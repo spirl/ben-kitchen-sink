@@ -8,8 +8,8 @@ Before touching any file in a git repo:
    ```
    git worktree add ~/worktrees/<repo>/<branch> <branch>
    ```
-   Edit files under `~/worktrees/<repo>/<branch>/`, never main checkout. Use `git -C ~/worktrees/<repo>/<branch>` for all git ops.
-4. **Monitor PR** — poll with `gh pr view <number> --json state,reviewDecision,comments`; apply fixes in same worktree, commit, push. Keep worktree alive until merged or closed.
+   Edit under `~/worktrees/<repo>/<branch>/`, never main checkout. Use `git -C ~/worktrees/<repo>/<branch>` for all git ops.
+4. **Monitor PR** — poll with `gh pr view <number> --json state,reviewDecision,comments`; apply fixes in same worktree, commit, push. Keep alive until merged or closed.
 5. **Clean up** after merge:
    ```
    git worktree remove ~/worktrees/<repo>/<branch>

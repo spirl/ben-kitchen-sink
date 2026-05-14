@@ -1,6 +1,6 @@
 # User Communications
 
-Any message posted, commented, or sent on behalf of the user (GitHub/linear/notion comments, PR replies, Slack messages, emails, etc.) must:
+Any message posted on behalf of user (GitHub/Linear/Notion comments, PR replies, Slack, emails, etc.) must:
 
 1. Be written in **English**.
-2. Require **explicit user confirmation** before sending — draft the message, show it via `AskUserQuestion` (Yes/No), and send only if confirmed.
+2. Require **explicit user confirmation** before sending — draft, show via `AskUserQuestion` (Yes/No), send only if confirmed.
