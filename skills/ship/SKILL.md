@@ -26,8 +26,9 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 | 2 | Code + Tests | coder + test-writer | code written for current plan; test-writer skipped for IaC/config-only/docs |
 | 3 | Validate | validator | last result = PASS, no changes since |
 | 4 | Review | reviewer | last verdict = APPROVE |
-| 4.5 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` in state |
+| 4.1 | Requirements check (opt.) | requirements-checker | disabled by default; enable with `enable_req_check: true` in state, or when spec URL is a Linear ticket |
 | 5 | Patch docs | doc-patcher | no code changed since last doc run |
+| 5.1 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` in state |
 | 6 | Open PR | pr-agent | PR already open on branch |
 | 7 | Monitor CI | — | CI green, or no PR yet |
 
@@ -47,12 +48,14 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 
 ```json
 {
-  "stage": "plan|code|validate|review|docs|pr|ci|done",
+  "stage": "plan|code|validate|review|req-check|docs|fact-check|pr|ci|done",
   "spec_file": null, "repo_root": "", "branch_name": "",
   "worktree_path": "", "pr_number": null,
   "validator_rounds": 0, "reviewer_retries": 0,
   "code_files": [], "test_files": [], "doc_files": [],
-  "code_conventions": null, "test_conventions": null
+  "code_conventions": null, "test_conventions": null,
+  "linear_ticket_id": null,
+  "enable_req_check": false, "enable_fact_check": false
 }
 ```
 
@@ -63,6 +66,8 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 - `$ARGUMENTS[1]` — branch name (optional)
 
 Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is | inline → `.pipeline/spec.md`
+
+If the URL is a Linear ticket URL (`linear.app/*/issue/<ID>/...` or bare `ABC-123`), extract the ticket ID and save `{ "linear_ticket_id": "<ID>", "enable_req_check": true }` in state.
 
 **B. Detect real state** (always; trumps stale saved state):
 
@@ -156,12 +161,37 @@ Call `reviewer` → `.pipeline/reviewer_report.md`.
 - **APPROVE** → save `{ "stage": "docs" }`, continue
 - **REQUEST CHANGES** → send blocking issues to `coder`, reset validator counter, back to stage 3. Max `MAX_REVIEWER_RETRIES` retries.
 
+## Stage 4.1 — Requirements Check (optional)
+
+Runs only when `enable_req_check: true` in state OR when `spec_file` was fetched from a Linear URL.
+
+Fetch the Linear ticket via MCP (`mcp__claude_ai_Linear__get_issue`) and write content to `.pipeline/ticket.md`.
+
+```json
+{
+  "ticket_file": ".pipeline/ticket.md",
+  "ticket_id": "<linear_ticket_id>",
+  "repo_root": "<repo_root>",
+  "code_files": <code_files>,
+  "branch_name": "<branch_name>"
+}
+```
+Call `requirements-checker` → `.pipeline/requirements_report.md`.
+- **PASS** → save `{ "stage": "docs" }`, continue
+- **FAIL** → show gaps to user; ask whether to fix or proceed. If fix: send gaps to `coder`, back to stage 3. If proceed: continue with warning.
+
 ## Stage 5 — Doc Patcher
 
 ```json
 { "code_files": <code_files>, "repo_root": "<repo_root>" }
 ```
 Call `doc-patcher`. Save: `{ "stage": "pr", "doc_files": [...] }`
+
+## Stage 5.1 — Fact-check (optional)
+
+Runs only when `enable_fact_check: true` in state. Validates that updated docs are consistent with the code.
+
+Call `fact-checker` with `doc_files` and `code_files`. Save: `{ "stage": "pr" }` (no state change if disabled).
 
 ## Stage 6 — PR Agent
 
@@ -214,4 +244,5 @@ After every user intervention (permission grant, answer, re-prompt, unblock), in
 - Create PRs as `--draft`
 - One-line progress after each stage
 - Re-read `state.json` at top of every loop iteration
-- Fact-checker stage is opt-in: set `enable_fact_check: true` in state or as an argument to enable
+- Requirements-checker stage (4.1) is opt-in: auto-enabled when spec is a Linear URL; or set `enable_req_check: true` in state
+- Fact-checker stage (5.1) is opt-in: set `enable_fact_check: true` in state or as an argument to enable
