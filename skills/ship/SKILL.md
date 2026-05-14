@@ -176,6 +176,10 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 | CI fix 3× fail | Stop, show CI log |
 | Agent ERROR | Stop, show error |
 
+## Self-Improver
+
+After every user intervention (permission grant, answer, re-prompt, unblock), invoke `self-improver` with a description of what happened. Runs by default; disable with `enable_self_improve: false` in state.
+
 ## Rules
 
 - Never commit `.pipeline/` artifacts
@@ -183,4 +187,3 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 - Create PRs as `--draft`
 - One-line progress after each stage
 - Re-read `state.json` at top of every loop iteration
-- Self-improver runs by default (supervisor-managed); disable with `enable_self_improve: false`
