@@ -21,6 +21,7 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 
 | # | Stage | Agent | Skip when |
 |---|-------|-------|-----------|
+| 0.5 | Supervise | supervisor | called after each stage (not skippable) |
 | 1 | Plan | planner | `plan.md` exists, spec unchanged |
 | 2 | Code + Tests | coder + test-writer | code written for current plan; test-writer skipped for IaC/config-only/docs |
 | 3 | Validate | validator | last result = PASS, no changes since |
@@ -77,7 +78,15 @@ Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is
 
 ## Loop
 
-After each completed stage: re-assess → next stage → repeat until CI green, blocked, or no stages remain.
+After each completed stage, call the supervisor before advancing:
+```json
+{ "pipeline_state": ".pipeline/state.json", "last_stage_output": "<last_report_path>" }
+```
+- `continue` → proceed to next stage
+- `intervene(agent, instructions)` → call the specified agent with the given instructions, then re-run the current stage
+- `escalate` → stop pipeline, show supervisor's Diagnosis to user
+
+After each stage: re-assess → next stage → repeat until CI green, blocked, or no stages remain.
 
 ## Stage 1 — Plan
 
