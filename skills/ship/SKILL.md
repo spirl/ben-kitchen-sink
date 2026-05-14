@@ -156,7 +156,7 @@ Poll `gh pr view <pr_number> --json statusCheckRollup` every 60 s (max 20 polls)
 
 | CI state | Action |
 |---|---|
-| All green | Save `{ "stage": "done" }`; if `enable_self_improve: true` → call `self-improver` with `artifact_dir: ".pipeline"`; clean up worktree; report PR URL |
+| All green | Save `{ "stage": "done" }`, clean up worktree, report PR URL |
 | Failing | `gh run view` logs → fix via `coder` → re-run stages 3–6 → re-push |
 | Failing after 3 fixes | Stop, show CI log |
 | Timeout | Stop, tell user to check CI |
