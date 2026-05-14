@@ -203,6 +203,10 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 | Agent returns malformed output | Stop; show user: "Agent <name> returned unexpected format at stage <X>." |
 | Agent ERROR | Stop, show error |
 
+## Self-Improver
+
+After every user intervention (permission grant, answer, re-prompt, unblock), invoke `self-improver` with a description of what happened. Runs by default; disable with `enable_self_improve: false` in state.
+
 ## Rules
 
 - Never commit `.pipeline/` artifacts
