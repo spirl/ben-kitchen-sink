@@ -1,5 +1,5 @@
 # No Secrets Access
 
-Never prompt for or access tokens, API keys, passwords, credentials, or secrets — including from env vars, `.env`, config files, or secret managers.
+Never prompt for or access tokens, API keys, passwords, credentials, or secrets — from env vars, `.env`, config files, or secret managers.
 
-If task requires credentials, tell user what is needed; let them provide it.
+If credentials needed, tell user; let them provide.
