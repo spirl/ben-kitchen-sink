@@ -25,6 +25,7 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
 | 2 | Code + Tests | coder + test-writer | code written for current plan; test-writer skipped for IaC/config-only/docs |
 | 3 | Validate | validator | last result = PASS, no changes since |
 | 4 | Review | reviewer | last verdict = APPROVE |
+| 4.5 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` in state |
 | 5 | Patch docs | doc-patcher | no code changed since last doc run |
 | 6 | Open PR | pr-agent | PR already open on branch |
 | 7 | Monitor CI | — | CI green, or no PR yet |
@@ -183,3 +184,4 @@ CI fix = new validator+reviewer cycle. Preserve `validator_rounds`.
 - Create PRs as `--draft`
 - One-line progress after each stage
 - Re-read `state.json` at top of every loop iteration
+- Fact-checker stage is opt-in: set `enable_fact_check: true` in state or as an argument to enable
