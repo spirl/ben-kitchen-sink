@@ -14,6 +14,8 @@ Run tests, analyze every failure, produce structured report routing each failure
 `$ARGUMENTS` — path to handoff file:
 - `test_files`, `repo_root`, `validator_notes` — how to run, env vars, fixtures
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```

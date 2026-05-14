@@ -18,6 +18,8 @@ Write implementation from architecture and requirements. Follow repo conventions
 - `failure_details` _(optional)_ — prior validator failures; fix all before new code
 - `review_issues` _(optional)_ — blocking reviewer issues; fix each before re-implementing
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```

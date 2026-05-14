@@ -14,6 +14,8 @@ Independent code review of implementation and tests. Produce clear verdict: appr
 `$ARGUMENTS` — path to handoff file:
 - `requirements_file`, `architecture_file`, `code_files`, `test_files`, `validator_report`
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```

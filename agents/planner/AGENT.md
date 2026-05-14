@@ -18,6 +18,8 @@ Produce everything the coder and test-writer need: structured requirements and a
 
 Exactly one of `spec_file` or `content` must be provided. If neither is present, emit `ERROR: handoff missing spec_file and content` and stop.
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 ```

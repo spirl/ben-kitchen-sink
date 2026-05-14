@@ -16,6 +16,8 @@ Write the actual test code from the requirements and architecture. Follow the re
 - `code_files` — list of implemented source files (from coder output)
 - `repo_root` — absolute path to the repository root
 
+_Field names follow [handoff-schema.md](../handoff-schema.md)._
+
 ## Output
 
 A structured response containing:
