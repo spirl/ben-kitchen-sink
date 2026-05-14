@@ -6,13 +6,13 @@ Before touching any file in a git repo:
 2. **Check existing worktrees** — `git worktree list`; reuse if target branch already checked out.
 3. **Work inside a worktree** — add if needed:
    ```
-   git worktree add ~/worktrees/<repo-name>/<branch-name> <branch-name>
+   git worktree add ~/worktrees/<repo>/<branch> <branch>
    ```
-   Edit files under `~/worktrees/<repo-name>/<branch-name>/`, never main checkout. Use `git -C ~/worktrees/<repo-name>/<branch-name>` for all git ops.
+   Edit files under `~/worktrees/<repo>/<branch>/`, never main checkout. Use `git -C ~/worktrees/<repo>/<branch>` for all git ops.
 4. **Monitor PR** — poll with `gh pr view <number> --json state,reviewDecision,comments`; apply fixes in same worktree, commit, push. Keep worktree alive until merged or closed.
 5. **Clean up** after merge:
    ```
-   git worktree remove ~/worktrees/<branch-name>
+   git worktree remove ~/worktrees/<repo>/<branch>
    git worktree prune
    ```
 
