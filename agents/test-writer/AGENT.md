@@ -15,6 +15,7 @@ Write the actual test code from the requirements and architecture. Follow the re
 - `requirements_file` — path to the planner's output (requirements + architecture)
 - `code_files` — list of implemented source files (from coder output)
 - `repo_root` — absolute path to the repository root
+- `test_conventions` _(optional)_ — pre-loaded content of `how-to-test` skill; when present, skip file discovery
 
 ## Output
 
@@ -42,9 +43,7 @@ Anything the validator needs to know to run the tests correctly (env vars, fixtu
 
 1. **Read inputs** — load the requirements/architecture doc and scan the implemented source files.
 
-2. **Read repo test conventions** — look for:
-   - `.claude/skills/how-to-test/SKILL.md` — if it exists, read it and follow it strictly
-   - If absent, infer conventions from existing test files in the repo
+2. **Read repo test conventions** — use `test_conventions` from handoff if present; else look for `.claude/skills/how-to-test/SKILL.md`; else infer from existing test files in the repo
 
 3. **Read the source code** — understand the actual function signatures, types, and module structure before writing tests.
 

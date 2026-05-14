@@ -39,7 +39,8 @@ echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/
   "spec_file": null, "repo_root": "", "branch_name": "",
   "worktree_path": "", "pr_number": null,
   "validator_rounds": 0, "reviewer_retries": 0,
-  "code_files": [], "test_files": [], "doc_files": []
+  "code_files": [], "test_files": [], "doc_files": [],
+  "code_conventions": null, "test_conventions": null
 }
 ```
 
@@ -65,9 +66,14 @@ Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is
 | State = `done` | Report and exit |
 | Nothing | **plan** (needs spec arg) |
 
-**C. Worktree** — follow `@rules/worktree.md`. Derive `<worktree_path>` as `repo_root`. Create `.pipeline/`.
+**C. Pre-load conventions** (run once; stored in state):
+- Read `.claude/skills/how-to-code/SKILL.md` if it exists → store content as `code_conventions`
+- Read `.claude/skills/how-to-test/SKILL.md` if it exists → store content as `test_conventions`
+- If absent, the field stays `null`; agents fall back to their own discovery
 
-**D. Intent** — print `Stages to run: [X, Y] | Skipping: [A (reason)]`
+**D. Worktree** — follow `@rules/worktree.md`. Derive `<worktree_path>` as `repo_root`. Create `.pipeline/`.
+
+**E. Intent** — print `Stages to run: [X, Y] | Skipping: [A (reason)]`
 
 ## Loop
 
@@ -76,7 +82,7 @@ After each stage: re-assess → next stage → repeat until CI green, blocked, o
 ## Stage 1 — Plan
 
 ```json
-{ "spec_file": "<spec_file>", "content": null, "repo_root": "<repo_root>" }
+{ "spec_file": "<spec_file>", "content": null, "repo_root": "<repo_root>", "code_conventions": "<code_conventions>" }
 ```
 Call `planner` → `.pipeline/plan.md`. Stop if ERROR, >3 questions, or `BREAKDOWN REQUIRED`.
 Save: `{ "stage": "code" }`
@@ -89,11 +95,11 @@ Testable: call `coder` + `test-writer` simultaneously.
 Not testable: call `coder` only, set `test_files = []`.
 
 ```json
-{ "requirements_file": ".pipeline/plan.md", "architecture_file": ".pipeline/plan.md", "repo_root": "<repo_root>" }
+{ "requirements_file": ".pipeline/plan.md", "architecture_file": ".pipeline/plan.md", "repo_root": "<repo_root>", "code_conventions": "<code_conventions>" }
 ```
 test-writer handoff (testable only):
 ```json
-{ "requirements_file": ".pipeline/plan.md", "code_files": [], "repo_root": "<repo_root>" }
+{ "requirements_file": ".pipeline/plan.md", "code_files": [], "repo_root": "<repo_root>", "test_conventions": "<test_conventions>" }
 ```
 Save: `{ "stage": "validate", "code_files": [...], "test_files": [...] }`
 
@@ -117,7 +123,8 @@ Save `validator_rounds` each round.
 {
   "requirements_file": ".pipeline/plan.md", "architecture_file": ".pipeline/plan.md",
   "code_files": <code_files>, "test_files": <test_files>,
-  "validator_report": ".pipeline/validator_report.md"
+  "validator_report": ".pipeline/validator_report.md",
+  "code_conventions": "<code_conventions>", "test_conventions": "<test_conventions>"
 }
 ```
 Call `reviewer` → `.pipeline/reviewer_report.md`.

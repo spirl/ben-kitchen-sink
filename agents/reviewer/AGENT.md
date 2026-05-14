@@ -13,6 +13,8 @@ Independent code review of implementation and tests. Produce clear verdict: appr
 
 `$ARGUMENTS` — path to handoff file:
 - `requirements_file`, `architecture_file`, `code_files`, `test_files`, `validator_report`
+- `code_conventions` _(optional)_ — pre-loaded `how-to-code` content; skip file discovery when present
+- `test_conventions` _(optional)_ — pre-loaded `how-to-test` content; skip file discovery when present
 
 ## Output
 
@@ -51,7 +53,7 @@ One paragraph overall assessment.
 ## Steps
 
 1. **Read all inputs** — requirements, architecture, source files, test files, validator report
-2. **Read repo conventions** — `.claude/skills/how-to-code/SKILL.md` and `.claude/skills/how-to-test/SKILL.md`; use as review standard
+2. **Read repo conventions** — use `code_conventions` / `test_conventions` from handoff if present; else load `.claude/skills/how-to-code/SKILL.md` and `.claude/skills/how-to-test/SKILL.md`; use as review standard
 3. **Check requirements coverage** — per REQ: implementation matches acceptance criteria and at least one test covers it
 4. **Review source code** — module matches architecture? interfaces correct? logic bugs? security?
 5. **Review tests** — isolated? test names describe failure? mocks used correctly?
