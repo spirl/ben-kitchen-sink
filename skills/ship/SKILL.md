@@ -73,13 +73,13 @@ Input: URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is
 | No PR, `validator_report.md` = PASS | **review** |
 | Code + tests exist | **validate** |
 | Only `plan.md` | **code** |
-| State = `done` | Report and exit |
+| State = `done` | Monitor PR for comments until merged, then wrap up |
 | Nothing | **plan** (needs spec arg) |
 
 **Idempotency rules:**
 - If `state.json` shows a stage as `done` and its output artifacts still exist → skip that stage, do not re-run
 - If stage is `pr` and a PR already exists on `branch_name` → skip pr-agent, go directly to CI monitoring
-- If stage is `done` → print summary and exit immediately, do not re-run any stage
+- If stage is `done` → monitor the PR for new comments until it is merged, then do wrap up (delete worktree, record achievement)
 
 **C. Pre-load conventions** (run once; stored in state):
 - Read `.claude/skills/how-to-code/SKILL.md` if it exists → store content as `code_conventions`
