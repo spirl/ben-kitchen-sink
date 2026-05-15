@@ -1,220 +1,102 @@
 ---
 name: ship
-description: Smart development orchestrator. Assesses current repo state, runs only the pipeline stages actually needed (planner → coder+test-writer → validator → reviewer → doc-patcher → pr-agent → CI), and loops until CI is green or user input is required. Picks up from where it left off on subsequent invocations. Use when the user asks to "ship", "develop", "implement", "build", "fix CI", "run the pipeline", "implement this ticket", or wants to ship code.
-allowed-tools: Read Write Glob Bash Agent CronCreate CronDelete
+description: Smart development orchestrator. Bootstraps the pipeline — creates worktree, writes initial .shipstate/supervisor.md, calls supervisor. Use when the user asks to "ship", "develop", "implement", "build", "fix CI", "run the pipeline", "implement this ticket", or wants to ship code. Supervisor handles all routing from there.
+allowed-tools: Read, Write, Glob, Bash, Agent, WebFetch
 argument-hint: [url-or-file-or-description] [branch-name]
-effort: max
+effort: medium
 ---
 
 # Ship
 
-Assess state → pick stages → run → loop until done.
+Bootstrap → call supervisor → relay result.
 
 ```!
 echo "Repo: $(git rev-parse --show-toplevel 2>/dev/null || echo '(not a git repo)')"
-echo "Branch: $(git branch --show-current 2>/dev/null || echo '(unknown)')"
-echo "Pipeline state: $(cat .pipeline/state.json 2>/dev/null || echo '(none)')"
-echo "Open PRs: $(gh pr list --json number,headRefName,statusCheckRollup 2>/dev/null | jq -c '[.[] | {number,branch:.headRefName,ci:(.statusCheckRollup // [] | map(.conclusion) | unique)}]' || echo '(none)')"
+echo "Branch: $(git branch --show-current)"
+echo "Existing state: $(cat .shipstate/supervisor.md 2>/dev/null | head -3 || echo '(none)')"
 ```
 
-## Stages
+## Resume
 
-| # | Stage | Agent | Skip when |
-|---|-------|-------|-----------|
-| 0.5 | Supervise | supervisor | called after each stage (not skippable) |
-| 1 | Plan | planner | `plan.md` exists, spec unchanged |
-| 2 | Code + Tests | coder + test-writer | code written for current plan; test-writer skipped for IaC/config-only/docs |
-| 3 | Validate | validator | last result = PASS, no changes since |
-| 4 | Review | reviewer | last verdict = APPROVE |
-| 4.1 | Requirements check (opt.) | requirements-checker | disabled by default; enable with `enable_req_check: true` or when spec URL is Linear |
-| 5 | Patch docs | doc-patcher | no code changed since last doc run |
-| 5.1 | Fact-check (opt.) | fact-checker | disabled by default; enable with `enable_fact_check: true` |
-| 6 | Commit + Push + Open PR | (ship) | PR already open |
-| 7 | PR Lifecycle | pr-agent | PR merged or closed |
+If `.shipstate/supervisor.md` exists and stage ≠ `done`:
+- Print `Resuming from stage: <stage>`
+- Call `supervisor` with path to `.shipstate/supervisor.md`
+- Stop (skip bootstrap)
 
-## Constants
+## Bootstrap (first run)
 
-| Constant | Value | Used in |
-|---|---|---|
-| `MAX_VALIDATOR_ROUNDS` | 5 | Stage 3 loop |
-| `MAX_REVIEWER_RETRIES` | 1 | Stage 4 retry |
+### 1 — Parse args
 
-## State File
-
-`.pipeline/state.json` — read at startup, updated after each stage.
-
-```json
-{
-  "stage": "plan|code|validate|review|req-check|docs|fact-check|pr|pr-agent|done",
-  "spec_file": null, "repo_root": "", "branch_name": "",
-  "worktree_path": "", "pr_number": null,
-  "validator_rounds": 0, "reviewer_retries": 0,
-  "code_files": [], "test_files": [], "doc_files": [],
-  "code_conventions": null, "test_conventions": null,
-  "linear_ticket_id": null,
-  "enable_req_check": false, "enable_fact_check": false,
-  "repo_slug": "", "pr_monitor_cron_id": null
-}
-```
-
-## Step 0 — Assess & Setup
-
-**A. Arguments** (first run; ignored if state exists):
 - `$ARGUMENTS[0]` — URL / file path / inline description
-- `$ARGUMENTS[1]` — branch (optional)
+- `$ARGUMENTS[1]` — branch name (optional; default: `ben/<topic-from-spec>`)
 
-URL → fetch GitHub/Linear/Jira → `.pipeline/spec.md` | file → as-is | inline → `.pipeline/spec.md`
+If no arg and no existing state: stop, ask user for spec.
 
-Linear URL (`linear.app/*/issue/<ID>/...` or bare `ABC-123`): extract ticket ID, save `{ "linear_ticket_id": "<ID>", "enable_req_check": true }`.
+### 2 — Fetch spec
 
-**B. Detect real state** (always; trumps stale saved state):
+| Input | Action |
+|-------|--------|
+| `linear.app/*/issue/<ID>` or bare `ABC-123` | Fetch via `mcp__claude_ai_Linear__get_issue` → `.shipstate/spec.md`; set `linear_ticket: <ID>`, `req_check: true` |
+| GitHub URL | `gh issue view <N>` or fetch page → `.shipstate/spec.md` |
+| Local file path | Read → `.shipstate/spec.md` |
+| Inline text | Write to `.shipstate/spec.md` |
 
-| Observed | Enter stage |
-|---|---|
-| PR on branch, all CI green | **done** |
-| PR on branch, CI failing or pending | **pr-agent** (call pr-agent with `pr_number` from state) |
-| No PR, `reviewer_report.md` = APPROVE | **docs** |
-| No PR, `validator_report.md` = PASS | **review** |
-| Code + tests exist | **validate** |
-| Only `plan.md` | **code** |
-| State = `done` | Wrap up: delete worktree, record achievement |
-| Nothing | **plan** (needs spec arg) |
+### 3 — Worktree
 
-**C. Conventions** (once; stored in state): read `.claude/skills/how-to-code/SKILL.md` → `code_conventions`, `.claude/skills/how-to-test/SKILL.md` → `test_conventions`. Absent → `null`; agents discover own.
+Follow `@rules/worktree.md`. Derive branch from arg or spec topic (`ben/<topic>`). `repo_slug` = `owner/repo` from `git remote get-url origin`.
 
-**D. Worktree** — follow `@rules/worktree.md`. Derive `<worktree_path>` as `repo_root`. Create `.pipeline/`.
+Create `.shipstate/` inside the worktree.
 
-**E. Intent** — print `Stages to run: [X, Y] | Skipping: [A (reason)]`
+### 4 — Conventions
 
-## Loop
+Check for `.claude/skills/how-to-code/SKILL.md` and `.claude/skills/how-to-test/SKILL.md`. Store paths (or `null`) for `supervisor.md`.
 
-After each stage, call supervisor: `{ "pipeline_state": ".pipeline/state.json", "last_stage_output": "<last_report_path>" }`
-- `continue` → next stage
-- `intervene(agent, instructions)` → call agent, re-run stage
-- `escalate` → stop, show Diagnosis
+### 5 — Write `.shipstate/supervisor.md`
 
-Re-assess → next stage → repeat until done, blocked, or no stages remain.
+```markdown
+# Pipeline State
 
-## Stage 1 — Plan
+## Stage
+plan
 
-```json
-{ "spec_file": "<spec_file>", "content": null, "repo_root": "<repo_root>", "code_conventions": "<code_conventions>" }
+## Spec
+- file: .shipstate/spec.md
+- linear_ticket: <ID or null>
+
+## Repo
+- root: <repo_root>
+- worktree: <worktree_path>
+- branch: <branch_name>
+- slug: <owner/repo or null>
+
+## Conventions
+- code: <path or null>
+- test: <path or null>
+
+## Files
+### Code
+
+### Tests
+
+### Docs
+
+## Rounds
+- validator: 0
+- reviewer: 0
+
+## Flags
+- req_check: <true|false>
+- fact_check: false
+- pr_number: null
+- cron_id: null
 ```
-Call `planner` → `.pipeline/plan.md`. Stop if ERROR, >3 questions, or `BREAKDOWN REQUIRED`.
-Save: `{ "stage": "code" }`
 
-## Stage 2 — Code + Tests
+### 6 — Call supervisor
 
-Skip `test-writer` if IaC (Terraform/Pulumi/Helm/K8s/Ansible), config-only, or docs. Testable: call `coder` + `test-writer` in parallel. Not testable: `coder` only, `test_files = []`.
-
-```json
-{ "requirements_file": ".pipeline/plan.md", "architecture_file": ".pipeline/plan.md", "repo_root": "<repo_root>", "code_conventions": "<code_conventions>" }
-```
-test-writer handoff (testable only):
-```json
-{ "requirements_file": ".pipeline/plan.md", "code_files": [], "repo_root": "<repo_root>", "test_conventions": "<test_conventions>" }
-```
-Save: `{ "stage": "validate", "code_files": [...], "test_files": [...] }`
-
-## Stage 3 — Validator Loop (max `MAX_VALIDATOR_ROUNDS` rounds)
-
-```json
-{ "test_files": <test_files>, "repo_root": "<repo_root>", "validator_notes": "<notes>" }
-```
-Call `validator` → `.pipeline/validator_report.md`.
-- **PASS** → save `{ "stage": "review" }`, continue
-- **FAIL, route=coder** → add `failure_details`, re-call coder, re-validate
-- **FAIL, route=test-writer** → re-call test-writer, re-validate
-- **FAIL, route=analyst** → stop, ask user
-- **`MAX_VALIDATOR_ROUNDS` rounds** → stop, show report
-
-Save `validator_rounds` each round.
-
-## Stage 4 — Reviewer
-
-```json
-{
-  "requirements_file": ".pipeline/plan.md", "architecture_file": ".pipeline/plan.md",
-  "code_files": <code_files>, "test_files": <test_files>,
-  "validator_report": ".pipeline/validator_report.md",
-  "code_conventions": "<code_conventions>", "test_conventions": "<test_conventions>"
-}
-```
-Call `reviewer` → `.pipeline/reviewer_report.md`.
-- **APPROVE** → save `{ "stage": "docs" }`, continue
-- **REQUEST CHANGES** → send blocking issues to `coder`, reset validator counter, back to stage 3. Max `MAX_REVIEWER_RETRIES` retries.
-
-## Stage 4.1 — Requirements Check (opt.) — `enable_req_check: true` or Linear URL spec
-
-Fetch ticket via `mcp__claude_ai_Linear__get_issue` → `.pipeline/ticket.md`.
-
-```json
-{
-  "ticket_file": ".pipeline/ticket.md", "ticket_id": "<linear_ticket_id>",
-  "repo_root": "<repo_root>", "code_files": <code_files>, "branch_name": "<branch_name>"
-}
-```
-Call `requirements-checker` → `.pipeline/requirements_report.md`.
-- **PASS** → save `{ "stage": "docs" }`, continue
-- **FAIL** → show gaps; ask fix or proceed. Fix: send gaps to `coder`, back to stage 3.
-
-## Stage 5 — Doc Patcher
-
-```json
-{ "code_files": <code_files>, "repo_root": "<repo_root>" }
-```
-Call `doc-patcher`. Save: `{ "stage": "pr", "doc_files": [...] }`
-
-## Stage 5.1 — Fact-check (opt.) — `enable_fact_check: true`
-
-Call `fact-checker` with `doc_files` + `code_files`. Save: `{ "stage": "pr" }`.
-
-## Stage 6 — Commit + Push + Open PR
-
-1. **Read PR content** — read `requirements_file` and `reviewer_report`; extract summary and reviewer notes. Store for step 4.
-2. **Commit** — `git -C <worktree_path> add <code_files> <test_files> <doc_files>` then `git -C <worktree_path> commit -m "feat: <one-line summary>"`.
-3. **Push** — `git -C <worktree_path> push -u origin <branch_name>` (no `--force`).
-4. **Open PR** — `gh pr create --draft --title "<title>" --body "<body from step 1>"` per `@rules/pr-style.md`; apply `type:*` label.
-5. **Save**: `{ "stage": "pr-agent", "pr_number": <N>, "repo_slug": "<owner/repo>" }`
-
-## Stage 7 — PR Lifecycle
-
-```json
-{
-  "repo_root": "<worktree_path>", "branch_name": "<branch_name>",
-  "pr_number": <N>, "repo_slug": "<owner/repo>",
-  "artifact_dir": ".pipeline"
-}
-```
-Call `pr-agent` → cron setup, CI + comment loop, PR metadata management.
-
-On SUCCESS → save `{ "stage": "done" }`.
-On FAIL → show error, stop.
-
-## Errors
-
-| Situation | Action |
-|---|---|
-| No arg/state/context | Stop, ask for spec |
-| Spec not found | Stop, tell user |
-| Worktree fails | Stop, tell user |
-| Planner >3 questions | Stop, show them |
-| Validator `MAX_VALIDATOR_ROUNDS`× fail | Stop, show report |
-| Reviewer `MAX_REVIEWER_RETRIES+1`× changes | Stop, show review |
-| Agent returns empty output | Stop: "Agent <name> returned no output at stage <X>. Check agent definition." |
-| Agent returns malformed output | Stop: "Agent <name> returned unexpected format at stage <X>." |
-| Agent ERROR | Stop, show error |
-
-## Self-Improver
-
-After every user intervention (permission grant, answer, re-prompt, unblock), invoke `self-improver`. Disable: `enable_self_improve: false` in state.
+Call `supervisor` agent with path to `.shipstate/supervisor.md`. Relay supervisor's final output to user.
 
 ## Rules
 
-- Never commit `.pipeline/` artifacts
-- Never push `main`/`master`
-- PRs as `--draft`
-- One-line progress after each stage
-- Re-read `state.json` each loop iteration
-- Stage 4.1: auto-enabled for Linear URL; or `enable_req_check: true`
-- Stage 5.1: `enable_fact_check: true`
+- Never commit `.shipstate/` files
+- Never push to `main`/`master`
+- `.shipstate/` always lives inside the worktree, never in main checkout

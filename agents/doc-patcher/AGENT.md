@@ -11,11 +11,15 @@ Update docs directly affected by code changes; work only from changed files.
 
 ## Input
 
-`$ARGUMENTS` — path to JSON handoff file:
-- `code_files` — source files added or modified
-- `repo_root` — absolute path to repository root
+`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
+
+Read from `supervisor.md`: `repo_root`, `worktree`, `## Files / Code` list.
+
+If code files list is empty, write empty report to `.shipstate/docs.md` and stop.
 
 ## Output
+
+Write to `.shipstate/docs.md`:
 
 ```
 ## Docs Updated
@@ -28,18 +32,16 @@ Update docs directly affected by code changes; work only from changed files.
 - path/to/doc.md — reason (e.g. auto-generated, out of scope)
 ```
 
-Return updated file paths as `doc_files` for the orchestrator.
-
 ## Steps
 
-1. **Read inputs** — parse handoff; if `code_files` empty, emit empty report and stop.
+1. **Read inputs** — load `supervisor.md` for repo_root + code files list.
 2. **Find candidate docs** — for each changed file, look (in order):
    - Same directory: `*.md`, `README*`
    - Parent directory: `README.md`, `CLAUDE.md`
    - Repo root: `README.md`, `CLAUDE.md`, `docs/`
 3. **Read each candidate** — check for references to changed files, functions, or modules.
 4. **Update only stale sections** — don't rewrite accurate sections; don't add sections unless new public interface introduced.
-5. **Emit report**.
+5. **Write output** to `.shipstate/docs.md`.
 
 ## Rules
 

@@ -1,67 +1,90 @@
-# Handoff Schema
+---
+name: shipstate-spec
+description: Format and convention for the .shipstate/ shared pipeline directory — replaces per-stage JSON handoffs.
+---
 
-Canonical field names for inter-agent JSON handoffs in the ship pipeline. Agents' Input sections reference these names; ship skill constructs handoffs with these keys.
+# `.shipstate/` Spec
 
-## Common Fields
+Shared state directory for the ship pipeline. `supervisor` is the sole writer of `supervisor.md`; agents write only their own output files.
 
-| Field | Type | Description |
-|---|---|---|
-| `repo_root` | string | Absolute path to repository root |
-| `artifact_dir` | string | Directory for pipeline artifacts (default: `.pipeline/`) |
+## Directory Layout
 
-## Specification Fields
+```
+.shipstate/
+├── supervisor.md     ← pipeline state — written only by supervisor
+├── spec.md           ← original spec / ticket content
+├── planner.md        ← requirements + architecture (planner)
+├── coder.md          ← code summary; coder-N.md if parallel runs
+├── tester.md         ← test summary + validator notes (test-writer)
+├── validator.md      ← test results + routing verdict (validator)
+├── reviewer.md       ← review verdict + blocking issues (reviewer)
+├── requirements.md   ← requirements check result (optional)
+├── docs.md           ← docs patched list (doc-patcher)
+└── pr-agent.md       ← PR state, CI status, comment context (pr-agent)
+```
 
-| Field | Type | Description |
-|---|---|---|
-| `spec_file` | string | Path to spec/ticket file (planner input) |
-| `content` | string | Pre-fetched spec content — alternative to `spec_file` |
-| `requirements_file` | string | Path to planner output (`plan.md`) |
-| `architecture_file` | string | Path to architecture design (same file as `requirements_file` for combined outputs) |
+## `supervisor.md` Format
 
-## Code Fields
+```markdown
+# Pipeline State
 
-| Field | Type | Description |
-|---|---|---|
-| `code_files` | string[] | Source files written or modified by coder |
-| `test_files` | string[] | Test files written by test-writer |
-| `doc_files` | string[] | Documentation files updated by doc-patcher |
+## Stage
+<plan|code|validate|review|req-check|docs|pr|pr-agent|done>
 
-## Diagnostic Fields
+## Spec
+- file: .shipstate/spec.md
+- linear_ticket: <ID or null>
 
-| Field | Type | Description |
-|---|---|---|
-| `failure_details` | string | Validator failure report — passed to coder when re-running after test failures |
-| `review_issues` | string | Blocking reviewer issues — passed to coder when reviewer requests changes |
-| `validator_notes` | string | How to run tests, env vars, fixtures — from test-writer to validator |
+## Repo
+- root: <absolute path>
+- worktree: <absolute path>
+- branch: <branch name>
+- slug: <owner/repo or null>
 
-## Branch / PR Fields
+## Conventions
+- code: <path to how-to-code SKILL.md or null>
+- test: <path to how-to-test SKILL.md or null>
 
-| Field | Type | Description |
-|---|---|---|
-| `branch_name` | string | Git branch for the PR |
-| `worktree_path` | string | Absolute path to git worktree |
-| `reviewer_report` | string | Path to reviewer report file |
-| `reviewer_verdict` | string | Must be `APPROVE` for pr-agent to proceed |
+## Files
+### Code
+- path/to/file.ext
 
-## Convention Fields (optional)
+### Tests
+- path/to/test.ext
 
-Pre-loaded by ship at startup, injected into handoffs; agents skip file-discovery when present.
+### Docs
+- path/to/doc.md
 
-| Field | Type | Description |
-|---|---|---|
-| `code_conventions` | string | Content of `.claude/skills/how-to-code/SKILL.md` |
-| `test_conventions` | string | Content of `.claude/skills/how-to-test/SKILL.md` |
+## Rounds
+- validator: <N>
+- reviewer: <N>
 
-## Per-Agent Summary
+## Flags
+- req_check: <true|false>
+- fact_check: <true|false>
+- pr_number: <N or null>
+- cron_id: <ID or null>
+```
 
-| Agent | Required | Optional |
-|---|---|---|
-| `planner` | `spec_file` OR `content`, `repo_root` | `code_conventions` |
-| `coder` | `requirements_file`, `architecture_file`, `repo_root` | `failure_details`, `review_issues`, `code_conventions` |
-| `test-writer` | `requirements_file`, `code_files`, `repo_root` | `test_conventions` |
-| `validator` | `test_files`, `repo_root`, `validator_notes` | — |
-| `reviewer` | `requirements_file`, `architecture_file`, `code_files`, `test_files`, `validator_report` | `code_conventions`, `test_conventions` |
-| `doc-patcher` | `code_files`, `repo_root` | — |
-| `pr-agent` | `repo_root`, `branch_name`, `worktree_path`, `code_files`, `test_files`, `doc_files`, `artifact_dir`, `requirements_file`, `reviewer_report`, `reviewer_verdict` | — |
-| `ticket-analyst` | `content`, `source_type` | `existing_tickets`, `repo_root` |
-| `supervisor` | `pipeline_state`, `last_stage_output` | — |
+Omit empty list sections (e.g. skip `### Tests` if no test files yet).
+
+## Agent Convention
+
+- `$ARGUMENTS` for every agent: path to `.shipstate/supervisor.md`
+- Each agent reads `supervisor.md` for shared context (repo paths, branch, file lists, conventions)
+- Each agent reads its own predecessor files from `.shipstate/`
+- Each agent writes output to its designated file
+- Supervisor is the **only** writer of `supervisor.md`
+
+## Per-Agent Files
+
+| Agent | Reads | Writes |
+|-------|-------|--------|
+| planner | `supervisor.md`, `spec.md` | `planner.md` |
+| coder | `supervisor.md`, `planner.md`; `validator.md` on retry; `reviewer.md` on retry | `coder.md` (or `coder-N.md`) |
+| test-writer | `supervisor.md`, `planner.md`, `coder.md` | `tester.md` |
+| validator | `supervisor.md`, `tester.md` | `validator.md` |
+| reviewer | `supervisor.md`, `planner.md` | `reviewer.md` |
+| requirements-checker | `supervisor.md`, `planner.md` | `requirements.md` |
+| doc-patcher | `supervisor.md` | `docs.md` |
+| pr-agent | `supervisor.md` | `pr-agent.md` |

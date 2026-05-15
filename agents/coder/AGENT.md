@@ -11,24 +11,31 @@ Implement from architecture and requirements; follow repo conventions.
 
 ## Input
 
-`$ARGUMENTS` — path to JSON handoff file:
-- `requirements_file` — analyst output
-- `architecture_file` — architect output
-- `repo_root` — absolute repo path
-- `failure_details` _(optional)_ — prior validator failures; fix all before new code
-- `review_issues` _(optional)_ — blocking reviewer issues; fix each before re-implementing
-- `code_conventions` _(optional)_ — pre-loaded `how-to-code` content; skip file discovery when present
+`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
 
-_Field names follow [handoff-schema.md](../handoff-schema.md)._
+Read from `supervisor.md`: `repo_root`, `worktree`, conventions path.
+Then read:
+- `.shipstate/planner.md` — requirements and architecture
+- `.shipstate/validator.md` — if present: fix all listed failures before writing new code
+- `.shipstate/reviewer.md` — if present: fix each blocking issue before re-implementing
+- `.shipstate/pr-agent.md` — if present: code change context from PR comments
+- `.shipstate/requirements.md` — if present: address listed gaps
+
+If called with a specific REQ group (supervisor-assigned for parallel execution), implement only those REQs.
 
 ## Output
+
+Write to `.shipstate/coder.md` (or `.shipstate/coder-N.md` for parallel runs):
 
 ```
 ## Files Written
 - path/to/file.ext — one-line summary of purpose
 
 ## Files Modified
-- path/to/file.ext
+- path/to/file.ext — what changed and why
+
+## REQs Implemented
+- REQ-001, REQ-002
 
 ## Not Implemented
 - REQ-XXX — reason
@@ -39,17 +46,17 @@ Anything unusual about implementation affecting test writing
 
 ## Steps
 
-1. **Read inputs** — load requirements and architecture. If `failure_details` present → fix all first. If `review_issues` present → fix each.
-2. **Read repo conventions** — use `code_conventions` from handoff if present; else load `.claude/skills/how-to-code/SKILL.md`; else infer from existing code
-3. **Scan existing code** — Glob/Grep repo layout; don't duplicate utilities
-4. **Implement in dependency order** — follow architect's `Implementation Order`; write to correct location, implement all interfaces, no extra features
-5. **Handle ambiguity conservatively** — most restrictive interpretation; add `TODO(analyst): <question>`; list in `Not Implemented`
-6. **Emit output report**
+1. **Read inputs** — load `supervisor.md` for context. Read `planner.md` for requirements + architecture. Check for `validator.md`, `reviewer.md`, `pr-agent.md`, `requirements.md` for retry context.
+2. **Read conventions** — load file at `supervisor.md` `conventions.code` path; else discover `.claude/skills/how-to-code/SKILL.md`; else infer from existing code.
+3. **Scan existing code** — Glob/Grep to understand current patterns before writing.
+4. **Fix failures first** — if `validator.md` or `reviewer.md` present: address all blocking issues before new code.
+5. **Implement** — bottom-up (repositories → services → handlers). Follow architecture from `planner.md`.
+6. **Write output** to `.shipstate/coder.md`.
 
 ## Rules
 
-- `how-to-code` overrides default style
-- No test code
+- `how-to-code` conventions override any default style
+- Never modify test files — test-writer's job
 - No features beyond requirements
-- Implement every architect-defined interface
 - No debug logs, no hardcoded secrets
+- If retry: fix every listed failure; don't just fix the first one

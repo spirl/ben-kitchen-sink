@@ -1,79 +1,153 @@
 ---
 name: supervisor
-description: Monitors pipeline health after each stage transition, detects loops and anomalies, and routes to the appropriate agent with specific instructions — or escalates to the user. Called by the ship skill between stages.
-tools: Read
-effort: low
+description: Orchestrates the full ship pipeline — reads .shipstate/supervisor.md, calls agents in sequence (parallelising where possible), loops until done or blocked. Central controller; called once by /ship at bootstrap and by pr-agent for feedback routing.
+tools: Read, Write, Edit, Agent, AskUserQuestion, Bash(git add*), Bash(git commit*), Bash(git push*), Bash(git -C * add*), Bash(git -C * commit*), Bash(git -C * fetch*), Bash(git -C * rebase*), Bash(git -C * push -u*), Bash(gh pr create*), Bash(gh pr view*), Bash(gh pr edit*), Bash(git worktree*), Bash(git branch*)
+effort: high
 ---
 
 # Supervisor
 
-Check pipeline state for anomalies after each stage. Decide: continue, route to specific agent, or escalate.
+Read `.shipstate/supervisor.md` → decide next action → call agent(s) → update state → loop until `done` or blocked.
 
 ## Input
 
-`$ARGUMENTS` — path to handoff JSON:
-- `pipeline_state` — contents of `.pipeline/state.json`
-- `last_stage_output` — file path to last agent's output report
+`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
 
 ## Output
 
 ```
-## Verdict
-continue | intervene | escalate
+## Pipeline Result
+DONE | BLOCKED | FAIL
 
-## Routing
-- Agent: <agent_name>
-- Instructions: <specific, actionable instructions>
+## Summary
+<what was built; PR URL if applicable>
 
-## Diagnosis
-- Observation: <what anomaly was detected>
-- Evidence: <exact data from state or output that triggered this>
+## Blocked Reason
+<if BLOCKED: what needs user action and why>
 ```
 
-When `continue`: Routing omitted.
-When `escalate`: Routing omitted, Diagnosis shown to user.
+## State File
 
-## Routing Targets
+Read `supervisor.md` before every agent call. Write it back after every stage. Format: [handoff-schema.md](../handoff-schema.md).
 
-When `intervene`, `Agent` must be one of: `planner`, `coder`, `test-writer`, `validator`, `reviewer`, `doc-patcher`, `pr-agent`.
+## Routing Table
 
-Choose agent closest to root cause:
-
-| Symptom | Route to | Example instruction |
-|---|---|---|
-| Validator looping on same failure | `coder` | "Fix recurring failure: `<exact error message>`" |
-| Reviewer flagging same file repeatedly | `coder` | "Reviewer stuck on `<file>`: `<specific issue>`" |
-| No test files but validation expected | `test-writer` | "Generate tests for: `<code_files list>`" |
-| Spec ambiguity surfaced by coder/validator | `planner` | "Clarify: `<specific open question>`" |
-| Agent produced empty output (first occurrence) | same agent | "Re-run with explicit output format: emit full ## Output block" |
+| Stage | Action |
+|-------|--------|
+| `plan` | Call `planner` → `planner.md` → stage `code` |
+| `code` | Parallel if REQs independent: call `coder` + `test-writer` → stage `validate` |
+| `validate` | Call `validator` → PASS: stage `review`; FAIL: re-call coder or test-writer; max 5 rounds |
+| `review` | Call `reviewer` → APPROVE: stage `req-check` or `docs`; REQUEST CHANGES: re-call coder + back to `validate`; max 1 retry |
+| `req-check` | Call `requirements-checker` → PASS: stage `docs`; FAIL: re-call coder + back to `validate` |
+| `docs` | Call `doc-patcher` → stage `pr` |
+| `pr` | Commit + push + open draft PR → stage `pr-agent` |
+| `pr-agent` | Call `pr-agent`; on feedback: route to coder/planner, then resume |
+| `done` | Emit result, offer worktree cleanup |
 
 ## Steps
 
-1. **Load state** — parse `pipeline_state` JSON. Note: `stage`, `validator_rounds`, `reviewer_retries`, `code_files`, `test_files`.
-2. **Read last output** — load report at `last_stage_output`. Scan for error signals and content quality.
-3. **Evaluate anomaly patterns** (in order; emit on first match):
+### 0 — Load state
 
-   **Loop detection:**
-   - `validator_rounds >= 3` AND last two reports contain same failure → `intervene(coder, "Validator stuck after {validator_rounds} rounds. Fix root cause: {failure_message}")`
-   - `reviewer_retries >= 1` AND current report flags same file path as prior → `intervene(coder, "Reviewer blocking on same file after {reviewer_retries} retries: {issue_summary}")`
-   - Same `stage` with no change to `code_files`, `test_files`, or `pr_number` after 3 snapshots → `escalate`
+Read `supervisor.md`. Extract stage, repo_root, worktree, branch, slug, file lists, rounds, flags.
 
-   **Output quality:**
-   - `last_stage_output` empty or <50 chars → `intervene(<same_agent>, "Previous run produced no output. Re-run and emit the full ## Output block.")`
-   - `last_stage_output` starts with `ERROR:` → `escalate`
-   - `last_stage_output` contains `BREAKDOWN REQUIRED` → `escalate`
+Print: `[ship] stage: <stage> | validator_round: <N> | reviewer_round: <N>`
 
-   **Stage preconditions:**
-   - Stage is `validate`, `test_files` empty, work is not config/IaC-only → `intervene(test-writer, "No test files. Generate tests for: {code_files}")`
-   - Stage is `pr` and `branch_name` empty/null → `escalate`
+### Stage: `plan`
 
-4. **No anomaly** → verdict `continue`
-5. **Emit output**
+Call `planner` with path to `supervisor.md`. Planner writes `.shipstate/planner.md`.
+
+- Error or >3 open questions → escalate to user.
+- `BREAKDOWN REQUIRED` → escalate, show breakdown.
+
+Update: stage → `code`.
+
+### Stage: `code`
+
+Read `planner.md`. Identify REQs that can run in parallel (independent: no shared mutable state, no ordering constraint between them).
+
+**Parallel** — call `coder` once per independent group + `test-writer` all simultaneously:
+- Each coder writes `coder-N.md`
+- Test-writer writes `tester.md`
+
+**Sequential** — call `coder` → `coder.md`, then `test-writer` → `tester.md`.
+
+After all calls: collect code_files from `coder*.md`, test_files from `tester.md`. Update `supervisor.md` (Files sections). Stage → `validate`.
+
+Skip `test-writer` (leave `tester.md` absent) for: IaC (Terraform/Pulumi/Helm/K8s/Ansible), config-only, docs-only.
+
+### Stage: `validate`
+
+Call `validator` with path to `supervisor.md`. Validator writes `validator.md`.
+
+Read `validator.md`:
+- `PASS` → stage → `review`.
+- `FAIL, route=coder` → call `coder` (reads `validator.md` for failure details), increment validator round, stay at `validate`.
+- `FAIL, route=test-writer` → call `test-writer`, increment validator round, stay at `validate`.
+- `FAIL, route=analyst` → escalate.
+- validator round ≥ 5 → escalate.
+
+### Stage: `review`
+
+Call `reviewer` with path to `supervisor.md`. Reviewer writes `reviewer.md`.
+
+- `APPROVE` → stage → `req-check` if `req_check=true`; else `docs`.
+- `REQUEST CHANGES` → call `coder` (reads `reviewer.md` for review_issues), reset validator round to 0, stage → `validate`. Increment reviewer round.
+- Reviewer round ≥ 1 and same file blocked again → escalate.
+
+### Stage: `req-check`
+
+Call `requirements-checker` with path to `supervisor.md`. Writes `requirements.md`.
+
+- `PASS` → stage → `docs`.
+- `FAIL` → call `coder` (reads `requirements.md` for gaps), stage → `validate`.
+
+### Stage: `docs`
+
+Call `doc-patcher` with path to `supervisor.md`. Writes `docs.md`.
+
+Update doc_files in `supervisor.md`. Stage → `pr`.
+
+### Stage: `pr`
+
+1. Read `planner.md` for one-line summary. Read `reviewer.md` for PR body notes.
+2. `git -C <worktree> add <all code + test + doc files>`
+3. `git -C <worktree> commit -m "feat: <summary>"`
+4. `git -C <worktree> push -u origin <branch>`
+5. `gh pr create --draft --title "<title>" --body "<body>"` — follow `@rules/pr-style.md`.
+6. Save pr_number to `supervisor.md`. Stage → `pr-agent`.
+
+### Stage: `pr-agent`
+
+Call `pr-agent` with path to `supervisor.md`. PR agent writes `pr-agent.md` and manages its own cron.
+
+**Feedback routing** — when `pr-agent` calls supervisor back:
+1. Read `pr-agent.md` — extract comment type and context.
+2. Code change → stage → `code` (coder reads `pr-agent.md`), re-run validate → review → commit/push.
+3. Requirements change → stage → `plan`, call `planner` with pr-agent context, restart from `code`.
+4. After fix: call `pr-agent` again to push and resume monitoring.
+
+### Stage: `done`
+
+Emit Pipeline Result: DONE. Ask user via `AskUserQuestion` to `git worktree remove <worktree>`.
+
+## Anomaly Detection
+
+Check after every agent call before continuing:
+
+| Condition | Action |
+|-----------|--------|
+| Agent output empty or <50 chars | Re-call same agent once with "emit full ## Output block" |
+| Agent output starts with `ERROR:` | Escalate |
+| `BREAKDOWN REQUIRED` in output | Escalate with breakdown |
+| validator round ≥ 5 | Escalate |
+| reviewer round ≥ 1, same file blocked | Escalate |
+| Stage unchanged after 3 loops | Escalate |
 
 ## Rules
 
-- Read-only: never modify state, reports, or source files
-- Always emit a verdict — `continue` is valid and expected
-- `escalate` only when human judgment genuinely required; prefer `intervene` for recoverable situations
-- Routing target must be existing pipeline agent — never invent names
-- `intervene` instructions must be specific: quote actual failure message or file path
+- Re-read `supervisor.md` before every agent call — never cache it across stages
+- Never commit `.shipstate/` files
+- Never push to `main`/`master`
+- PRs always `--draft` unless user explicitly said otherwise
+- After every user intervention, call `self-improver` (skip if `self_improve=false` in state)
+- One-line `[ship] stage: X` log after each stage transition

@@ -11,16 +11,16 @@ Produce structured requirements + architecture for coder and test-writer.
 
 ## Input
 
-`$ARGUMENTS` — path to handoff JSON:
-- `spec_file` — path to local spec/ticket file
-- `content` — (alternative to `spec_file`) pre-fetched ticket content
-- `repo_root` — absolute path to repository root
+`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
 
-Exactly one of `spec_file` or `content` must be provided. If neither, emit `ERROR: handoff missing spec_file and content` and stop.
+Read from `supervisor.md`: `repo_root`, `worktree`, conventions path.
+Then read `.shipstate/spec.md` for the spec content.
 
-_Field names follow [handoff-schema.md](../handoff-schema.md)._
+If `spec.md` absent and no `linear_ticket` in supervisor.md, emit `ERROR: no spec found` and stop.
 
 ## Output
+
+Write to `.shipstate/planner.md`:
 
 ```
 ## Requirements
@@ -29,6 +29,7 @@ _Field names follow [handoff-schema.md](../handoff-schema.md)._
 - Description: one testable statement (starts with a verb)
 - Acceptance Criteria: what "done" looks like
 - Edge Cases: boundary conditions, error states, unexpected inputs
+- Parallel: yes | no  ← whether this REQ can be coded independently of others
 
 (repeat for each requirement)
 
@@ -61,7 +62,7 @@ Bottom-up: repositories → services → handlers
 
 ## Steps
 
-1. **Load input** — parse handoff; read `spec_file` if provided, else use `content`.
+1. **Load input** — read `supervisor.md` for repo_root + conventions path, then read `spec.md`.
    If input already contains structured acceptance criteria (from `plan-tickets`), preserve them and skip to step 4.
 2. **Check existing code** — Glob/Grep for relevant modules/patterns/conventions; avoid re-inventing what exists.
 3. **Extract requirements** — for each functional requirement:
@@ -69,6 +70,7 @@ Bottom-up: repositories → services → handlers
    - Write as single testable statement
    - Derive at least one concrete acceptance criterion
    - List edge cases specific to that requirement
+   - Mark `Parallel: yes` if it has no ordering dependency on other REQs and no shared mutable state
    - Flag ambiguous ones in Open Questions
 
    **If more than 3 requirements identified**, stop and emit:
@@ -98,7 +100,7 @@ Bottom-up: repositories → services → handlers
 
 5. **Identify dependencies** — only necessary ones; prefer standard library; flag cross-layer deps.
 6. **Order implementation** — repositories → services → handlers.
-7. **Emit output** as single Markdown block.
+7. **Write output** to `.shipstate/planner.md`.
 
 ## Rules
 
@@ -108,5 +110,5 @@ Bottom-up: repositories → services → handlers
 - No function bodies — coder's job
 - Every service/domain module needs ≥1 mockable boundary — flag if not achievable
 - Handlers never contain business logic; services never do direct I/O
-- Stop if >3 open questions — emit them, let orchestrator ask user
-- Stop if >3 requirements — emit suggested breakdown, let orchestrator ask user to split
+- Stop if >3 open questions — emit them, let supervisor ask user
+- Stop if >3 requirements — emit suggested breakdown, let supervisor ask user to split
