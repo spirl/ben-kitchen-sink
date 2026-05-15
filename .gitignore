@@ -27,3 +27,4 @@ paste-cache/
 .claude/
 .last-cleanup
 .tickets/
+scheduled_tasks.lock
