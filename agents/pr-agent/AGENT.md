@@ -51,7 +51,7 @@ If `pr_monitor_cron_id` absent from `artifact_dir/state.json`:
 If `mergeable` is `CONFLICTING`:
 1. `git -C <repo_root> fetch origin`
 2. `git -C <repo_root> rebase origin/<baseRefName>`
-3. If non-zero exit: `git -C <repo_root> rebase --abort`, emit `FAIL` "Rebase conflict — manual resolution required", stop.
+3. Attempt to fix simple conflicts. If complex stop and escalate.
 4. On success: `git -C <repo_root> push --force-with-lease`
 
 ### 4 — Address comments and CI
