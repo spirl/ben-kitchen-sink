@@ -1,13 +1,13 @@
 ---
 name: pr-agent
-description: Manages PR lifecycle after ship opens the PR — sets up a recurring cron loop, monitors CI and PR comments, routes code changes to coder and design questions to supervisor, pushes fixes, and tears down the cron when the PR merges. Final agent in the dev pipeline. Only runs after ship has created the PR.
-tools: Read, Write, Edit, Glob, Bash(git branch*), Bash(git checkout*), Bash(git rev-parse*), Bash(git remote*), Bash(git worktree*), Bash(git add*), Bash(git commit*), Bash(git push*), Bash(git -C * add*), Bash(git -C * commit*), Bash(git -C * push -u*), Bash(gh pr view*), Bash(gh pr comment*), Bash(gh pr edit*), Bash(gh run view*), Bash(gh run list*), Bash(date*), AskUserQuestion, Agent, CronCreate, CronDelete
+description: Manages PR lifecycle after ship opens the PR — sets up recurring cron loop, monitors CI and PR comments, routes code changes to coder and design questions to supervisor, pushes fixes, tears down cron on merge. Final agent in dev pipeline. Only runs after ship has created the PR.
+tools: Read, Write, Edit, Glob, Bash(git branch*), Bash(git checkout*), Bash(git rev-parse*), Bash(git remote*), Bash(git worktree*), Bash(git fetch*), Bash(git rebase*), Bash(git add*), Bash(git commit*), Bash(git push*), Bash(git -C * add*), Bash(git -C * commit*), Bash(git -C * fetch*), Bash(git -C * rebase*), Bash(git -C * push -u*), Bash(gh pr view*), Bash(gh pr comment*), Bash(gh pr edit*), Bash(gh run view*), Bash(gh run list*), Bash(date*), AskUserQuestion, Agent, CronCreate, CronDelete
 effort: high
 ---
 
 # PR Agent
 
-Recurring PR lifecycle loop: set up cron → fetch state → address comments/CI → push fixes → delete cron on merge.
+Recurring PR lifecycle loop: set up cron → fetch state → rebase if conflicts → address comments/CI → push fixes → delete cron on merge.
 
 ## Input
 
@@ -43,10 +43,18 @@ If `pr_monitor_cron_id` absent from `artifact_dir/state.json`:
 
 ### 2 — Fetch state
 
-- `gh pr view <pr_number> --repo <repo_slug> --json state,comments,reviews,reviewDecision,title,labels`
+- `gh pr view <pr_number> --repo <repo_slug> --json state,comments,reviews,reviewDecision,title,labels,mergeable,mergeStateStatus,baseRefName`
 - `gh run list --branch <branch_name> --limit 5` + `gh run view <run-id>` for CI status.
 
-### 3 — Address comments and CI
+### 3 — Rebase if conflicts
+
+If `mergeable` is `CONFLICTING`:
+1. `git -C <repo_root> fetch origin`
+2. `git -C <repo_root> rebase origin/<baseRefName>`
+3. If non-zero exit: `git -C <repo_root> rebase --abort`, emit `FAIL` "Rebase conflict — manual resolution required", stop.
+4. On success: `git -C <repo_root> push --force-with-lease`
+
+### 4 — Address comments and CI
 
 | Situation | Action |
 |---|---|
@@ -57,11 +65,11 @@ If `pr_monitor_cron_id` absent from `artifact_dir/state.json`:
 | Label change | `gh pr edit <pr_number> --add-label "<label>"` / `--remove-label` |
 | Simple question / discussion | Draft reply per `@rules/user-communications.md`; confirm via `AskUserQuestion` before posting |
 
-### 4 — Push fixes
+### 5 — Push fixes
 
 If files edited: `git -C <repo_root> add ... && git -C <repo_root> commit -m "fix: <summary>" && git -C <repo_root> push`.
 
-### 5 — Check merge status
+### 6 — Check merge status
 
 If `state` is `MERGED` or `CLOSED`: CronDelete `pr_monitor_cron_id`, emit final status, stop.
 Otherwise emit `RUNNING` and stop — cron handles next invocation.
