@@ -11,11 +11,17 @@ Update docs directly affected by code changes; work only from changed files.
 
 ## Input
 
-`$ARGUMENTS` — path to JSON handoff file:
-- `code_files` — source files added or modified
-- `repo_root` — absolute path to repository root
+`$ARGUMENTS` — path to `.ship/` artifact directory.
+
+Reads:
+- `.ship/coder.md` — code files written or modified (`## Files Written` + `## Files Modified`)
+- `.ship/state.json` — `repo_root`
+
+If code files list is empty, write empty report to `.ship/doc-patcher.md` and stop.
 
 ## Output
+
+Write to `.ship/doc-patcher.md`:
 
 ```
 ## Docs Updated
@@ -28,18 +34,16 @@ Update docs directly affected by code changes; work only from changed files.
 - path/to/doc.md — reason (e.g. auto-generated, out of scope)
 ```
 
-Return updated file paths as `doc_files` for the orchestrator.
-
 ## Steps
 
-1. **Read inputs** — parse handoff; if `code_files` empty, emit empty report and stop.
+1. **Read inputs** — parse `.ship/coder.md` for code files list; load `repo_root` from `.ship/state.json`.
 2. **Find candidate docs** — for each changed file, look (in order):
    - Same directory: `*.md`, `README*`
    - Parent directory: `README.md`, `CLAUDE.md`
    - Repo root: `README.md`, `CLAUDE.md`, `docs/`
 3. **Read each candidate** — check for references to changed files, functions, or modules.
 4. **Update only stale sections** — don't rewrite accurate sections; don't add sections unless new public interface introduced.
-5. **Emit report**.
+5. **Write output** to `.ship/doc-patcher.md`.
 
 ## Rules
 

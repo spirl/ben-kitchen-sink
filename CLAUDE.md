@@ -34,9 +34,9 @@ After editing any `.claude/**/*.md` file, invoke `/bungafy` on it (`rules/bungaf
 
 ### Ship pipeline
 
-`/ship` is the central orchestrator: **planner → coder + test-writer → validator → reviewer → doc-patcher → pr-agent**. State in `.pipeline/state.json`. `supervisor` called after every stage; `self-improver` after every user intervention.
+`/ship` is the central orchestrator: **planner → coder + test-writer → validator → reviewer → doc-patcher → pr-agent**. State in `.ship/state.json`. `supervisor` called after every stage; `self-improver` after every user intervention.
 
-Canonical inter-agent handoff fields: `agents/handoff-schema.md`.
+Pipeline reference (state schema, agent_history, common fields): `agents/ship.md`.
 
 ### Active skills
 

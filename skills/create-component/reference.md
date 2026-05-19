@@ -21,7 +21,7 @@
 
 **Input:** Orchestrator writes JSON handoff file; agent receives path as `$ARGUMENTS`.
 
-**Output:** Agent's final message captured by caller. Always include `## Status\nSUCCESS | FAIL | ERROR`. Write large outputs to `.pipeline/<agent>_report.md`.
+**Output:** Agent's final message captured by caller. Always include `## Status\nSUCCESS | FAIL | ERROR`. Write large outputs to `.ship/<agent>_report.md`.
 
 **Error handling:** Malformed input → emit `## Status\nERROR` with description and stop.
 

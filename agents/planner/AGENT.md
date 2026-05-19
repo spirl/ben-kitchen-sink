@@ -11,16 +11,17 @@ Produce structured requirements + architecture for coder and test-writer.
 
 ## Input
 
-`$ARGUMENTS` — path to handoff JSON:
-- `spec_file` — path to local spec/ticket file
-- `content` — (alternative to `spec_file`) pre-fetched ticket content
-- `repo_root` — absolute path to repository root
+`$ARGUMENTS` — path to `.ship/` artifact directory.
 
-Exactly one of `spec_file` or `content` must be provided. If neither, emit `ERROR: handoff missing spec_file and content` and stop.
+Reads:
+- `.ship/spec.md` — spec/ticket content (written by ship before dispatch)
+- `.ship/state.json` — `repo_root`, `code_conventions`
 
-_Field names follow [handoff-schema.md](../handoff-schema.md)._
+If `.ship/spec.md` absent, emit `ERROR: .ship/spec.md not found` and stop.
 
 ## Output
+
+Write to `.ship/plan.md`:
 
 ```
 ## Requirements
@@ -61,17 +62,15 @@ Bottom-up: repositories → services → handlers
 
 ## Steps
 
-1. **Load input** — parse handoff; read `spec_file` if provided, else use `content`.
-   If input already contains structured acceptance criteria (from `plan-tickets`), preserve them and skip to step 4.
-2. **Check existing code** — Glob/Grep for relevant modules/patterns/conventions; avoid re-inventing what exists.
+1. **Load input** — read `.ship/spec.md`. If already contains structured acceptance criteria (from `plan-tickets`), preserve them and skip to step 4.
+2. **Check existing code** — Glob/Grep `repo_root` for relevant modules/patterns/conventions; avoid re-inventing what exists.
 3. **Extract requirements** — for each functional requirement:
    - Assign unique ID: `REQ-001`, `REQ-002`, …
    - Write as single testable statement
    - Derive at least one concrete acceptance criterion
-   - List edge cases specific to that requirement
-   - Flag ambiguous ones in Open Questions
+   - List edge cases; flag ambiguous ones in Open Questions
 
-   **If more than 3 requirements identified**, stop and emit:
+   **If more than 3 requirements identified**, write to `.ship/plan.md` and stop:
    ```
    BREAKDOWN REQUIRED: This task has <N> requirements. Split it into smaller tasks before running the pipeline.
 
@@ -93,19 +92,17 @@ Bottom-up: repositories → services → handlers
    **Testability** — design for layer isolation:
    - Service layer accepts interfaces, not concrete implementations
    - Side effects (DB, HTTP, clock, random) injectable at module boundaries
-   - No global state or singletons
-   - Prefer pure functions over stateful objects
+   - No global state or singletons; prefer pure functions over stateful objects
 
 5. **Identify dependencies** — only necessary ones; prefer standard library; flag cross-layer deps.
 6. **Order implementation** — repositories → services → handlers.
-7. **Emit output** as single Markdown block.
+7. **Write output** to `.ship/plan.md`.
 
 ## Rules
 
 - Every requirement must be independently testable
 - Don't infer unstated behavior — flag as open question
-- Write interfaces in pseudocode; no specific language syntax
-- No function bodies — coder's job
+- Interfaces in pseudocode; no specific language syntax; no function bodies
 - Every service/domain module needs ≥1 mockable boundary — flag if not achievable
 - Handlers never contain business logic; services never do direct I/O
 - Stop if >3 open questions — emit them, let orchestrator ask user

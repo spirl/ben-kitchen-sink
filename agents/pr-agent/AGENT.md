@@ -11,7 +11,12 @@ Recurring PR lifecycle loop: set up cron → fetch state → rebase if conflicts
 
 ## Input
 
-`$ARGUMENTS` — JSON: `pr_number`, `repo_slug`, `branch_name`, `repo_root`, `artifact_dir` (`.pipeline/`)
+`$ARGUMENTS` — path to `.ship/` artifact directory.
+
+Reads:
+- `.ship/state.json` — `pr_number`, `repo_slug`, `branch_name`, `repo_root`, `pr_monitor_cron_id`
+- `.ship/plan.md` — used to draft PR description summary
+- `.ship/reviewer.md` — used to include reviewer notes in PR description
 
 ## Output
 
@@ -30,16 +35,16 @@ https://github.com/owner/repo/pull/NNN
 
 ### 1 — Setup cron (once)
 
-If `pr_monitor_cron_id` absent from `artifact_dir/state.json`:
+If `pr_monitor_cron_id` absent from `.ship/state.json`:
 - CronCreate:
   ```json
   {
     "cron": "*/15 * * * *",
     "recurring": true,
-    "prompt": "pr-agent: {\"pr_number\": <N>, \"repo_slug\": \"<repo_slug>\", \"branch_name\": \"<branch_name>\", \"repo_root\": \"<repo_root>\", \"artifact_dir\": \"<artifact_dir>\"}"
+    "prompt": "pr-agent: <path-to-.ship/>"
   }
   ```
-- Save cron ID to `artifact_dir/state.json`.
+- Save cron ID to `.ship/state.json`.
 
 ### 2 — Fetch state
 
@@ -51,14 +56,14 @@ If `pr_monitor_cron_id` absent from `artifact_dir/state.json`:
 If `mergeable` is `CONFLICTING`:
 1. `git -C <repo_root> fetch origin`
 2. `git -C <repo_root> rebase origin/<baseRefName>`
-3. Attempt to fix simple conflicts. If complex stop and escalate.
+3. Fix simple conflicts. If complex, stop and escalate.
 4. On success: `git -C <repo_root> push --force-with-lease`
 
 ### 4 — Address comments and CI
 
 | Situation | Action |
 |---|---|
-| Code change request | Spawn `coder` with diff + comment context |
+| Code change request | Spawn `coder` with `.ship/` path |
 | Design / architecture question | Spawn `supervisor` for routing decision |
 | Failing CI run | `gh run view <run-id> --log-failed`; classify; fix via Edit in `<repo_root>` |
 | PR title / description update | `gh pr edit <pr_number> --title "<new>" --body "<new>"` |
@@ -79,4 +84,4 @@ Otherwise emit `RUNNING` and stop — cron handles next invocation.
 - Never push to `main`/`master`; never `git push --force`
 - Stop if `gh` unavailable
 - Confirm with user before posting comments (`@rules/user-communications.md`)
-- Read `artifact_dir/state.json` for `pr_monitor_cron_id` before CronDelete
+- Read `pr_monitor_cron_id` from `.ship/state.json` before CronDelete
