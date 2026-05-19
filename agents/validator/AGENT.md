@@ -11,14 +11,12 @@ Run tests, analyze every failure, produce structured report routing each failure
 
 ## Input
 
-`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
+`$ARGUMENTS` — path to handoff file:
+- `test_files`, `repo_root`, `validator_notes` — how to run, env vars, fixtures
 
-Read from `supervisor.md`: `repo_root`, `worktree`, `## Files / Tests` list.
-Then read `.shipstate/tester.md` for `## Validator Notes` (how to run, env vars, fixtures). If absent, infer test runner from repo.
+_Field names follow [ship.md](../ship.md)._
 
 ## Output
-
-Write to `.shipstate/validator.md`:
 
 ```
 ## Status
@@ -49,8 +47,8 @@ DONE (all pass) | RETRY (failures routed above)
 
 ## Steps
 
-1. **Read inputs** — load `supervisor.md` for repo_root + test file list. Read `tester.md` for validator notes.
-2. **Detect test runner** — use `tester.md` notes if present; else infer from repo (`pytest.ini`, `package.json`, `go.mod`).
+1. **Read inputs** — load handoff and validator notes.
+2. **Detect test runner** — read `.claude/skills/how-to-test/SKILL.md` or infer from repo (`pytest.ini`, `package.json`, `go.mod`).
 3. **Run tests** — capture stdout, stderr, exit code.
 4. **Parse output** — per test: name, pass/fail/error, message, file, line.
 5. **Diagnose failures**:
@@ -58,7 +56,7 @@ DONE (all pass) | RETRY (failures routed above)
    - Test bug → `test-writer` (wrong mock/fixture, wrong assertion, flaky)
    - Ambiguous spec → `analyst` (test and implementation disagree on spec)
 6. **All pass** → `Next Step: DONE`
-7. **Write output** to `.shipstate/validator.md`.
+7. **Emit report.**
 
 ## Rules
 
@@ -66,3 +64,4 @@ DONE (all pass) | RETRY (failures routed above)
 - Never modify source or test files
 - Can't run at all → route to `test-writer`
 - Same failure in 3+ tests → systemic bug, flag it
+- Max 3 retry cycles; escalate to user if still failing

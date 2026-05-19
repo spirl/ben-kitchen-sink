@@ -11,16 +11,16 @@ Produce structured requirements + architecture for coder and test-writer.
 
 ## Input
 
-`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
+`$ARGUMENTS` — path to handoff JSON:
+- `spec_file` — path to local spec/ticket file
+- `content` — (alternative to `spec_file`) pre-fetched ticket content
+- `repo_root` — absolute path to repo root
 
-Read from `supervisor.md`: `repo_root`, `worktree`, conventions path.
-Then read `.shipstate/spec.md` for the spec content.
+Exactly one of `spec_file` or `content` must be provided. If neither, emit `ERROR: handoff missing spec_file and content` and stop.
 
-If `spec.md` absent and no `linear_ticket` in supervisor.md, emit `ERROR: no spec found` and stop.
+_Field names follow [ship.md](../ship.md)._
 
 ## Output
-
-Write to `.shipstate/planner.md`:
 
 ```
 ## Requirements
@@ -29,7 +29,6 @@ Write to `.shipstate/planner.md`:
 - Description: one testable statement (starts with a verb)
 - Acceptance Criteria: what "done" looks like
 - Edge Cases: boundary conditions, error states, unexpected inputs
-- Parallel: yes | no  ← whether this REQ can be coded independently of others
 
 (repeat for each requirement)
 
@@ -62,16 +61,14 @@ Bottom-up: repositories → services → handlers
 
 ## Steps
 
-1. **Load input** — read `supervisor.md` for repo_root + conventions path, then read `spec.md`.
+1. **Load input** — parse handoff; read `spec_file` if provided, else use `content`.
    If input already contains structured acceptance criteria (from `plan-tickets`), preserve them and skip to step 4.
 2. **Check existing code** — Glob/Grep for relevant modules/patterns/conventions; avoid re-inventing what exists.
 3. **Extract requirements** — for each functional requirement:
    - Assign unique ID: `REQ-001`, `REQ-002`, …
    - Write as single testable statement
    - Derive at least one concrete acceptance criterion
-   - List edge cases specific to that requirement
-   - Mark `Parallel: yes` if it has no ordering dependency on other REQs and no shared mutable state
-   - Flag ambiguous ones in Open Questions
+   - List edge cases; flag ambiguous ones in Open Questions
 
    **If more than 3 requirements identified**, stop and emit:
    ```
@@ -95,20 +92,18 @@ Bottom-up: repositories → services → handlers
    **Testability** — design for layer isolation:
    - Service layer accepts interfaces, not concrete implementations
    - Side effects (DB, HTTP, clock, random) injectable at module boundaries
-   - No global state or singletons
-   - Prefer pure functions over stateful objects
+   - No global state or singletons; prefer pure functions over stateful objects
 
 5. **Identify dependencies** — only necessary ones; prefer standard library; flag cross-layer deps.
 6. **Order implementation** — repositories → services → handlers.
-7. **Write output** to `.shipstate/planner.md`.
+7. **Emit output** as single Markdown block.
 
 ## Rules
 
 - Every requirement must be independently testable
 - Don't infer unstated behavior — flag as open question
-- Write interfaces in pseudocode; no specific language syntax
-- No function bodies — coder's job
+- Interfaces in pseudocode; no specific language syntax; no function bodies
 - Every service/domain module needs ≥1 mockable boundary — flag if not achievable
 - Handlers never contain business logic; services never do direct I/O
-- Stop if >3 open questions — emit them, let supervisor ask user
-- Stop if >3 requirements — emit suggested breakdown, let supervisor ask user to split
+- Stop if >3 open questions — emit them, let orchestrator ask user
+- Stop if >3 requirements — emit suggested breakdown, let orchestrator ask user to split
