@@ -11,16 +11,16 @@ Read ticket requirements, read implementation, check each requirement is met.
 
 ## Input
 
-`$ARGUMENTS` — path to handoff file:
-- `ticket_file` — file with Linear ticket content (title, description, acceptance criteria)
-- `ticket_id` — Linear ticket ID (e.g. `FRY-123`) — display only
-- `repo_root` — absolute path to repo root
-- `code_files` _(optional)_ — source files written or modified; falls back to git diff
-- `branch_name` _(optional)_ — scopes git diff
+`$ARGUMENTS` — path to `.ship/` artifact directory.
 
-_Field names follow [ship.md](../ship.md)._
+Reads:
+- `.ship/ticket.md` — Linear ticket content (title, description, acceptance criteria; written by ship)
+- `.ship/coder.md` — source files written or modified (falls back to git diff if absent)
+- `.ship/state.json` — `repo_root`, `branch_name`, `linear_ticket_id`
 
 ## Output
+
+Write to `.ship/requirements.md`:
 
 ```
 ## Verdict
@@ -51,16 +51,16 @@ X / Y requirements covered. <one-line assessment>
 
 ## Steps
 
-1. **Read handoff** — load ticket_file, ticket_id, repo_root, code_files, branch_name.
+1. **Read inputs** — load `.ship/ticket.md`; parse `.ship/coder.md` for changed files list.
 2. **Parse ticket** — extract title, description, acceptance criteria. No explicit criteria → treat numbered/bulleted items as requirements. Unstructured → break into logical requirements.
-3. **Get changed files** — use `code_files` if provided; else `git diff main...HEAD --name-only` (or `git diff HEAD~1 --name-only`) from `repo_root`.
+3. **Get changed files** — use files from `.ship/coder.md` if present; else `git diff main...HEAD --name-only` from `repo_root`.
 4. **Read implementation** — read each changed source file (skip test, doc, config-only files).
 5. **Check each requirement**:
    - COVERED: implementation clearly satisfies it (evidence: file:line)
    - PARTIAL: implementation attempts but is incomplete
    - MISSING: no relevant code found
 6. **Build gaps section** — for each MISSING or PARTIAL: expected vs. found, suggest fix.
-7. **Emit verdict** — PASS only if all COVERED.
+7. **Write output** to `.ship/requirements.md`.
 
 ## Rules
 
@@ -68,4 +68,4 @@ X / Y requirements covered. <one-line assessment>
 - Never modify source files
 - Ambiguous requirement → interpret charitably; mark COVERED if reasonable implementation exists
 - Ignore style/formatting requirements; focus on functional: behavior, data, error handling, API contracts
-- No structured requirements in ticket → emit PASS with note: "No structured requirements found; skipping check"
+- No structured requirements in ticket → write PASS with note: "No structured requirements found; skipping check"

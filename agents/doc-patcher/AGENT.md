@@ -11,15 +11,17 @@ Update docs directly affected by code changes; work only from changed files.
 
 ## Input
 
-`$ARGUMENTS` — path to `.shipstate/supervisor.md`.
+`$ARGUMENTS` — path to `.ship/` artifact directory.
 
-Read from `supervisor.md`: `repo_root`, `worktree`, `## Files / Code` list.
+Reads:
+- `.ship/coder.md` — code files written or modified (`## Files Written` + `## Files Modified`)
+- `.ship/state.json` — `repo_root`
 
-If code files list is empty, write empty report to `.shipstate/docs.md` and stop.
+If code files list is empty, write empty report to `.ship/doc-patcher.md` and stop.
 
 ## Output
 
-Write to `.shipstate/docs.md`:
+Write to `.ship/doc-patcher.md`:
 
 ```
 ## Docs Updated
@@ -34,14 +36,14 @@ Write to `.shipstate/docs.md`:
 
 ## Steps
 
-1. **Read inputs** — load `supervisor.md` for repo_root + code files list.
+1. **Read inputs** — parse `.ship/coder.md` for code files list; load `repo_root` from `.ship/state.json`.
 2. **Find candidate docs** — for each changed file, look (in order):
    - Same directory: `*.md`, `README*`
    - Parent directory: `README.md`, `CLAUDE.md`
    - Repo root: `README.md`, `CLAUDE.md`, `docs/`
 3. **Read each candidate** — check for references to changed files, functions, or modules.
 4. **Update only stale sections** — don't rewrite accurate sections; don't add sections unless new public interface introduced.
-5. **Write output** to `.shipstate/docs.md`.
+5. **Write output** to `.ship/doc-patcher.md`.
 
 ## Rules
 

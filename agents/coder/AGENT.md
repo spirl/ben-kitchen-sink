@@ -11,17 +11,17 @@ Implement from architecture and requirements; follow repo conventions.
 
 ## Input
 
-`$ARGUMENTS` — path to JSON handoff file:
-- `requirements_file` — analyst output
-- `architecture_file` — architect output
-- `repo_root` — absolute repo path
-- `failure_details` _(optional)_ — prior validator failures; fix all before new code
-- `review_issues` _(optional)_ — blocking reviewer issues; fix each before re-implementing
-- `code_conventions` _(optional)_ — pre-loaded `how-to-code` content; skip file discovery when present
+`$ARGUMENTS` — path to `.ship/` artifact directory.
 
-_Field names follow [ship.md](../ship.md)._
+Reads:
+- `.ship/plan.md` — requirements and architecture (planner output)
+- `.ship/state.json` — `repo_root`, `code_conventions`
+- `.ship/validator.md` _(if present)_ — prior validation failures; fix all before new code
+- `.ship/reviewer.md` _(if present)_ — blocking reviewer issues; fix each before re-implementing
 
 ## Output
+
+Write to `.ship/coder.md`:
 
 ```
 ## Files Written
@@ -39,12 +39,12 @@ Anything unusual about implementation affecting test writing
 
 ## Steps
 
-1. **Read inputs** — load requirements and architecture. If `failure_details` present → fix all first. If `review_issues` present → fix each.
-2. **Read repo conventions** — use `code_conventions` from handoff if present; else load `.claude/skills/how-to-code/SKILL.md`; else infer from existing code.
-3. **Scan existing code** — Glob/Grep repo layout; don't duplicate utilities.
+1. **Read inputs** — load `.ship/plan.md`. If `.ship/validator.md` present → fix all failures first. If `.ship/reviewer.md` present → fix each blocking issue.
+2. **Read repo conventions** — use `code_conventions` from `.ship/state.json` if present; else load `.claude/skills/how-to-code/SKILL.md`; else infer from existing code.
+3. **Scan existing code** — Glob/Grep `repo_root`; don't duplicate utilities.
 4. **Implement in dependency order** — follow architect's `Implementation Order`; write to correct location, implement all interfaces, no extra features.
 5. **Handle ambiguity conservatively** — most restrictive interpretation; add `TODO(analyst): <question>`; list in `Not Implemented`.
-6. **Emit output report.**
+6. **Write output** to `.ship/coder.md`.
 
 ## Rules
 
